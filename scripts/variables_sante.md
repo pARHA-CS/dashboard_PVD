@@ -5,12 +5,7 @@
    - **D2** : Fonctions médicales et paramédicales (à titre libéral)
    - **D3** : Autres établissements et services à caractère sanitaire
 
-3. **TYPEQU** : Doit être parmi "D101", "D102", "D103", "D108", "D113" pour identifier les types spécifiques d'équipements de santé.
-   - **D101** : Établissement santé court séjour
-   - **D102** : Établissement santé moyen séjour
-   - **D103** : Établissement santé long séjour
-   - **D108** : Centre de santé
-   - **D113** : Maison de santé pluridisciplinaire
+3. **TYPEQU** : Doit contenir "D" pour identifier les types spécifiques d'équipements de santé.
 
 4. **CAPACITE** : Doit indiquer le nombre de lits ou de places disponibles dans les établissements de santé. Cela peut être un nombre entier représentant la capacité d'accueil.
 
