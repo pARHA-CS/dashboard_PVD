@@ -10,4 +10,5 @@ dependencies = [
     "numpy>=2.2.3",
     "polars>=1.22.0",
     "pyarrow>=19.0.0",
+    "streamlit>=1.42.0",
 ]
