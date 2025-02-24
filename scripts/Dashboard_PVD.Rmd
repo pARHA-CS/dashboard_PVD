@@ -1,29 +1,164 @@
 ---
 title: "Dashboard_PVD"
-output: html_document
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    theme: flatly
+runtime: shiny
 date: "2025-02-03"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include=FALSE, cache=TRUE}
+library(flexdashboard)
+library(shiny)
+library(plotly)
+library(dplyr)
+library(readr)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r import, cache=TRUE}
+liste_ville <- read_delim("~/Fac/M2/Semestre 2/DEE/Projet/dashboard_PVD/data/programme-petites-villes-de-demain-liste-des-villes-beneficiaires.csv")
+base_naissance <- read_delim("~/Fac/M2/Semestre 2/DEE/Projet/dashboard_PVD/data/naissance_et_deces/giga_db_naissance.csv")
+base_deces <- read_delim("~/Fac/M2/Semestre 2/DEE/Projet/dashboard_PVD/data/naissance_et_deces/giga_db_deces.csv")
 ```
 
-## Including Plots
+Sidebar {.sidebar}
+===
 
-You can also embed plots, for example:
+```{r}
+#Permet à l'utilisateur de sélectionner une ville parmis la liste des villes du programme
+selectInput("ville", label = "Selectionnez une ville du programme :",
+              choices = unique(liste_ville$lib_com),
+              selected = "Sancerre")
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#permet d'extraire le numéros du département associé à la ville selectionné
+code_departement <- reactive({liste_ville |> 
+    filter(lib_com == input$ville) |> 
+    pull(`Code Officiel Département`)})
+
+#Permet d'extraire le nom du département associé à la ville selectionné
+nom_departement <- reactive({liste_ville |> 
+    filter(lib_com == input$ville) |> 
+    pull(`Nom Officiel Département`)})
+
+#Permet d'extraire le nom de la région associé à la ville selectionné
+nom_region <- reactive({liste_ville |> 
+    filter(lib_com == input$ville) |> 
+    pull(`Nom Officiel Région`)})
+
+renderText({paste(input$ville, " est une ville de la région ", nom_region(), " et appartient au département : ", nom_departement() ," (" , code_departement(), ")", sep ="")})
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Naissances & Décès
+===
+
+Row valuebox
+-----------------------------------------------------------------------
+
+```{r}
+base_naissance_filtre <- reactive({filter(base_naissance, DEPNAIS == code_departement())})
+base_deces_filtre <- reactive({filter(base_deces, DEPDEC == code_departement())})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({naissance_2023 <- base_naissance_filtre() |> filter(annee == 2023)
+               valueBox(value = naissance_2023$nombre_total, caption = paste("Nombre de naissances en ", naissance_2023$annee, "dans : ", nom_departement()," (", code_departement(), ")"), color = "orange", icon = "fa-solid fa-baby")})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({naissance_2022 <- base_naissance_filtre() |> filter(annee == 2022)
+                naissance_2023 <- base_naissance_filtre() |> filter(annee == 2023)
+               valueBox(value = naissance_2023$nombre_total - naissance_2022$nombre_total, caption = paste("Différence avec ", naissance_2022$annee), color = "purple", icon = "fa-solid fa-baby-carriage")})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({deces_2023 <- base_deces_filtre() |> filter(annee == 2023)
+                naissance_2023 <- base_naissance_filtre() |> filter(annee == 2023)
+               valueBox(value = naissance_2023$nombre_total - deces_2023$nombre_total, caption = paste("Différence avec le nombre de décès en ", naissance_2023$annee), color = "grey", icon = "fa-solid fa-skull-crossbones")})
+```
+
+Row 
+-----------------------------------------------------------------------
+
+### Nombre total de naissances par année pour le département : `r renderText({paste(nom_departement()," (", code_departement(), ")", sep ="")})`
+
+```{r}
+renderPlot({
+  ggplot(base_naissance_filtre(), aes(x = annee, y = nombre_total)) +
+    geom_bar(stat = "identity", fill = "aquamarine", color = "black") +
+    geom_text(aes(label = nombre_total), vjust = 1.5, size = 7) +
+    labs(x = "Année",
+         y = "Nombre de naissances") +
+    theme_minimal() +
+    theme(
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11),
+      axis.text.x = element_text(size = 13),
+      axis.text.y = element_text(size = 13))})#,width = 1400, height = 550)
+```
+
+### Nombre de décès par année pour le département : `r renderText({paste(nom_departement()," (", code_departement(), ")", sep ="")})`
+
+```{r}
+renderPlot({
+  ggplot(base_deces_filtre(), aes(x = annee, y = nombre_total)) +
+    geom_bar(stat = "identity", fill = "black", color = "white") +
+    geom_text(aes(label = nombre_total), vjust = 1.5, size = 7, color = "white") +
+    labs(x = "Année",
+         y = "Nombre de deces") +
+    theme_minimal() +
+    theme(
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11),
+      axis.text.x = element_text(size = 13),
+      axis.text.y = element_text(size = 13))})#,width = 1400, height = 550)
+```
+
+Row 
+-----------------------------------------------------------------------
+
+### Nombre de naissance de garçons par année pour le département : `r renderText({paste(nom_departement()," (", code_departement(), ")", sep ="")})`
+
+```{r}
+renderPlot({
+  ggplot(base_naissance_filtre(), aes(x = annee, y = nombre_garcon)) +
+    geom_bar(stat = "identity", fill = "blue", color = "black") +
+    geom_text(aes(label = nombre_garcon), vjust = 1.5, size = 7) +
+    labs(x = "Année",
+         y = "Nombre de naissances") +
+    theme_minimal() +
+    theme(
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11),
+      axis.text.x = element_text(size = 13),
+      axis.text.y = element_text(size = 13))})#,width = 1400, height = 550)
+```
+
+### Nombre de naissance de filles par année pour le département : `r renderText({paste(nom_departement()," (", code_departement(), ")", sep ="")})`
+
+```{r}
+renderPlot({
+  ggplot(base_naissance_filtre(), aes(x = annee, y = nombre_fille)) +
+    geom_bar(stat = "identity", fill = "red", color = "black") +
+    geom_text(aes(label = nombre_fille), vjust = 1.5, size = 7) +
+    labs(x = "Année",
+         y = "Nombre de naissances") +
+    theme_minimal() +
+    theme(
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11),
+      axis.text.x = element_text(size = 13),
+      axis.text.y = element_text(size = 13))})#,width = 1400, height = 550)
+```
+
+
+
+
+
+
