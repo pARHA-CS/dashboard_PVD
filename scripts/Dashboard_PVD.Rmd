@@ -1,6 +1,6 @@
 ---
 title: "Dashboard"
-output: 
+output:
   flexdashboard::flex_dashboard:
     orientation: rows
     theme: flatly
@@ -8,35 +8,34 @@ output:
 runtime: shiny
 ---
 
-```{r}
+```{r setup, include=FALSE}
 library(shiny)
 library(flexdashboard)
 library(arrow)
 library(dplyr)
 library(ggplot2)
-library(shiny)
 library(leaflet)
 library(geosphere)
-```
+library(plotly)
 
-```{r}
-setwd(getwd())
-```
+data_path_simplified <- file.path("..", "data", "sante", "BDD_simplified.parquet")
+data_path_full <- file.path("..", "data", "sante", "BDD_full_simplified.parquet")
+data_path_culture_simplified <- file.path("..", "data", "culture", "BDD_culture_simplified.parquet")
+data_path_culture_full <- file.path("..", "data", "culture", "BDD_culture_full_simplified.parquet")
+data_path_festival_simplified <- file.path("..", "data", "culture", "BDD_festival_simplified.parquet")
+data_path_festival_full <- file.path("..", "data", "culture", "BDD_festival_full_simplified.parquet")
 
-```{r}
-data_path_simplified <- file.path("..", "data", "BDD_simplified.parquet")
-data_path_full <- file.path("..", "data", "BDD_full_simplified.parquet")
-```
+df_sante <- read_parquet(data_path_simplified)
+df_sante_full <- read_parquet(data_path_full)
+df_culture <-  read_parquet(data_path_culture_simplified)
+df_culture_full <-  read_parquet(data_path_culture_full)
+df_festival <-  read_parquet(data_path_festival_simplified)
+df_festival_full <-  read_parquet(data_path_festival_full)
 
-```{r}
-df <- read_parquet(data_path_simplified)
-df_full <- read_parquet(data_path_full)
-```
-
-```{r recodage de TYPEQU}
-df <- df %>%
-  mutate(TYPEQU = recode(TYPEQU,
-    "D101" = "ÉTABLISSEMENT SANTÉ COURT SÉJOUR",
+typequ_mapping <- c(
+  "D101" = "ÉTABLISSEMENT SANTÉ COURT SÉJOUR",
+  "D102" = "ÉTABLISSEMENT SANTÉ MOYEN SÉJOUR",
+  "D101" = "ÉTABLISSEMENT SANTÉ COURT SÉJOUR",
     "D102" = "ÉTABLISSEMENT SANTÉ MOYEN SÉJOUR",
     "D103" = "ÉTABLISSEMENT SANTÉ LONG SÉJOUR",
     "D104" = "ÉTABLISSEMENT PSYCHIATRIQUE",
@@ -99,151 +98,148 @@ df <- df %>%
     "D704" = "CENTRE PROVISOIRE D’HÉBERGEMENT",
     "D705" = "CENTRE ACCUEIL DEMANDEUR D’ASILE",
     "D709" = "AUTRES ÉTABLISSEMENTS POUR ADULTES ET FAMILLES EN DIFFICULTÉ"
-  ))
-```
+)
 
-```{r}
-df_full <- df_full %>%
-  mutate(TYPEQU = recode(TYPEQU,
-    "D101" = "ÉTABLISSEMENT SANTÉ COURT SÉJOUR",
-    "D102" = "ÉTABLISSEMENT SANTÉ MOYEN SÉJOUR",
-    "D103" = "ÉTABLISSEMENT SANTÉ LONG SÉJOUR",
-    "D104" = "ÉTABLISSEMENT PSYCHIATRIQUE",
-    "D105" = "CENTRE LUTTE CANCER",
-    "D106" = "URGENCES",
-    "D107" = "MATERNITÉ",
-    "D108" = "CENTRE DE SANTÉ",
-    "D109" = "STRUCTURE PSYCHIATRIQUE EN AMBULATOIRE",
-    "D110" = "CENTRE MÉDECINE PRÉVENTIVE",
-    "D111" = "DIALYSE",
-    "D112" = "HOSPITALISATION À DOMICILE",
-    "D113" = "MAISON DE SANTÉ PLURIDISCIPLINAIRE",
-    "D201" = "MÉDECIN GÉNÉRALISTE",
-    "D202" = "SPÉCIALISTE EN CARDIOLOGIE",
-    "D203" = "SPÉCIALISTE EN DERMATOLOGIE VÉNÉROLOGIE",
-    "D206" = "SPÉCIALISTE EN GASTRO-ENTÉROLOGIE HÉPATOLOGIE",
-    "D207" = "SPÉCIALISTE EN PSYCHIATRIE",
-    "D208" = "SPÉCIALISTE EN OPHTALMOLOGIE",
-    "D209" = "SPÉCIALISTE EN OTO-RHINO-LARYNGOLOGIE",
-    "D210" = "SPÉCIALISTE EN PÉDIATRIE",
-    "D211" = "SPÉCIALISTE EN PNEUMOLOGIE",
-    "D212" = "SPÉCIALISTE EN RADIODIAGNOSTIC ET IMAGERIE MÉDICALE",
-    "D213" = "SPÉCIALISTE EN STOMATOLOGIE",
-    "D214" = "SPÉCIALISTE EN GYNÉCOLOGIE (MÉDICALE ET/OU OBSTÉTRIQUE)",
-    "D221" = "CHIRURGIEN DENTISTE",
-    "D231" = "SAGE-FEMME",
-    "D233" = "MASSEUR KINÉSITHÉRAPEUTE",
-    "D235" = "ORTHOPHONISTE",
-    "D236" = "ORTHOPTISTE",
-    "D237" = "PÉDICURE-PODOLOGUE",
-    "D238" = "AUDIO PROTHÉSISTE",
-    "D239" = "ERGOTHÉRAPEUTE",
-    "D240" = "PSYCHOMOTRICIEN",
-    "D242" = "DIÉTÉTICIEN",
-    "D243" = "PSYCHOLOGUE",
-    "D244" = "INFIRMIER",
-    "D302" = "LABORATOIRE D'ANALYSES ET DE BIOLOGIE MÉDICALE",
-    "D303" = "AMBULANCE",
-    "D304" = "TRANSFUSION SANGUINE",
-    "D305" = "ÉTABLISSEMENT THERMAL",
-    "D307" = "PHARMACIE",
-    "D401" = "PERSONNES ÂGÉES : HÉBERGEMENT",
-    "D402" = "PERSONNES ÂGÉES : SOINS À DOMICILE",
-    "D403" = "PERSONNES ÂGÉES : SERVICES D’AIDE",
-    "D502" = "ÉTABLISSEMENT D’ACCUEIL DU JEUNE ENFANT (EAJE)",
-    "D503" = "LIEUX D’ACCUEIL ENFANT-PARENT (LAEP)",
-    "D504" = "RELAIS PETITE ENFANCE",
-    "D505" = "ACCUEIL DE LOISIR SANS HÉBERGEMENT (ALSH)",
-    "D506" = "CENTRES SOCIAUX",
-    "D507" = "MÉDIATION FAMILIALE",
-    "D601" = "ENFANTS HANDICAPÉS : HÉBERGEMENT",
-    "D602" = "ENFANTS HANDICAPÉS : SERVICES À DOMICILE OU AMBULATOIRES",
-    "D603" = "ADULTES HANDICAPÉS : ACCUEIL/HÉBERGEMENT",
-    "D604" = "ADULTES HANDICAPÉS : SERVICES D’AIDE",
-    "D605" = "TRAVAIL PROTÉGÉ",
-    "D606" = "ADULTES HANDICAPÉS : SERVICES DE SOINS À DOMICILE",
-    "D701" = "PROTECTION DE L’ENFANCE - HÉBERGEMENT",
-    "D702" = "PROTECTION DE L’ENFANCE - ACTION ÉDUCATIVE",
-    "D703" = "CHRS : CENTRE D’HÉBERGEMENT ET DE RÉINSERTION SOCIALE",
-    "D704" = "CENTRE PROVISOIRE D’HÉBERGEMENT",
-    "D705" = "CENTRE ACCUEIL DEMANDEUR D’ASILE",
-    "D709" = "AUTRES ÉTABLISSEMENTS POUR ADULTES ET FAMILLES EN DIFFICULTÉ"
-  ))
+df_sante <- df_sante |>  mutate(TYPEQU = recode(TYPEQU, !!!typequ_mapping))
+df_sante_full <- df_sante_full |>  mutate(TYPEQU = recode(TYPEQU, !!!typequ_mapping))
 ```
-
 
 Sidebar {.sidebar}
 ===
 
 ```{r}
-selectInput("ville", "Choisissez une ville :", choices = unique(df$LIBCOM))
-selectInput("typequ", "Choisissez un type d'équipement :", choices = unique(df$TYPEQU))
+selectInput("ville", "Choisissez une ville :", choices = unique(df_sante$LIBCOM))
+
 ```
 
 Santé
 ===
 
-### Chart B
+```{r}
+selectInput("typequ", "Choisissez un type d'équipement :", choices = unique(df_sante$TYPEQU))
+```
 
+
+Row valuebox
+--------------------------------------
+
+### Nombre d'équipements dans la ville
+
+```{r}
+renderValueBox({
+  ville_cible <- input$ville
+  nb_equipements <- df_sante |>  filter(LIBCOM == ville_cible, DOM == "D") |>  nrow()
+
+  valueBox(
+    nb_equipements,
+    "Nombre d'équipements",
+    icon = "fa-hospital-o",
+    color = "#dd3f2f"
+  )
+})
+```
+
+### Nombre moyen d'équipements dans les petites villes
+
+```{r}
+renderValueBox({
+  moyenne_petites_villes <- df_sante |> 
+    filter(DOM == "D") |> 
+    group_by(LIBCOM) |> 
+    summarise(count = n()) |> 
+    summarise(moyenne = mean(count))
+
+  valueBox(
+    round(moyenne_petites_villes$moyenne, 2),
+    "Moyenne petites villes",
+    icon = "fa-home",
+    color = "#dd3f2f"
+  )
+})
+```
+
+### Nombre moyen d'équipements dans les autres villes
+
+```{r}
+renderValueBox({
+  ville_cible <- input$ville
+  df_sante_autres_villes <- df_sante_full |>  filter(LIBCOM != ville_cible, DOM == "D")
+
+  moyenne_autres_villes <- df_sante_autres_villes |> 
+    group_by(LIBCOM) |> 
+    summarise(count = n()) |> 
+    summarise(moyenne = mean(count))
+
+  valueBox(
+    round(moyenne_autres_villes$moyenne, 2),
+    "Moyenne autres villes",
+    icon = "fa-globe",
+    color = "#dd3f2f"
+  )
+})
+```
+
+
+Row graph et carte
+--------------------------------------
+
+### `r renderText({paste("Nombre d'équipements de santé à ", input$ville,sep ="")})`
 
 ```{r}
 renderPlot({
   ville_cible <- input$ville
   typequ_cible <- input$typequ
 
-  df_sante_ville <- df %>%
-    filter(LIBCOM == ville_cible, DOM == "D") %>%
+  df_sante_ville <- df_sante |> 
+    filter(LIBCOM == ville_cible, DOM == "D") |> 
     count(TYPEQU)
 
   ggplot(df_sante_ville, aes(x = reorder(TYPEQU, n), y = n)) +
     geom_bar(stat = "identity", fill = "steelblue") +
     coord_flip() +
-    labs(title = paste("Nombre d'équipements de santé à", ville_cible),
-         x = "Type d'équipement",
-         y = "Nombre d'équipements") +
+    labs(x = "", y = "") +
     theme_minimal()
 })
-
 ```
 
-### Chart B
+### Carte
+
 ```{r}
 renderLeaflet({
   ville_cible <- input$ville
   typequ_cible <- input$typequ
 
-  df_sante_ville <- df %>%
+  df_sante_ville <- df_sante |> 
     filter(LIBCOM == ville_cible, DOM == "D", TYPEQU == typequ_cible)
 
-  # Inclure TYPEQU dans ville_coords
-  ville_coords <- df %>%
-    filter(LIBCOM == ville_cible) %>%
-    select(LATITUDE, LONGITUDE, TYPEQU) %>%
+  ville_coords <- df_sante |> 
+    filter(LIBCOM == ville_cible) |> 
+    select(LATITUDE, LONGITUDE, TYPEQU) |> 
     distinct()
 
   if (nrow(df_sante_ville) == 0) {
-    df_autres_villes <- df_full %>%
+    df_sante_autres_villes <- df_sante_full |> 
       filter(LIBCOM != ville_cible, DOM == "D", TYPEQU == typequ_cible)
 
-    df_autres_villes <- df_autres_villes %>%
+    df_sante_autres_villes <- df_sante_autres_villes |> 
       mutate(distance = distHaversine(cbind(LONGITUDE, LATITUDE), cbind(ville_coords$LONGITUDE, ville_coords$LATITUDE)))
 
-    equipement_proche <- df_autres_villes %>%
-      arrange(distance) %>%
+    equipement_proche <- df_sante_autres_villes |> 
+      arrange(distance) |> 
       head(1)
 
-    leaflet(equipement_proche) %>%
-      addTiles() %>%
+    leaflet(equipement_proche) |> 
+      addTiles() |> 
       addCircleMarkers(
         ~LONGITUDE, ~LATITUDE,
-        radius = 6,
+        radius = 8,
         color = "red",
         fillOpacity = 0.7,
         popup = ~paste("<b>Équipement le plus proche</b><br/>",
                        "Type d'équipement:", TYPEQU, "<br/>",
                        "Ville recommandée:", LIBCOM, "<br/>",
                        "Distance:", round(distance / 1000, 2), "km")
-      ) %>%
+      ) |> 
       addCircleMarkers(
         data = ville_coords,
         ~LONGITUDE, ~LATITUDE,
@@ -254,23 +250,23 @@ renderLeaflet({
                        "Type d'équipement:", TYPEQU, "<br/>")
       )
   } else {
-    leaflet(df_sante_ville) %>%
-      addTiles() %>%
+    leaflet(df_sante_ville) |> 
+      addTiles() |> 
       addCircleMarkers(
         ~LONGITUDE, ~LATITUDE,
-        radius = 6,
-        color = "blue",
+        radius = 8,
+        color = "red",
         fillOpacity = 0.7,
-        popup = ~paste("<b>Équipement</b><br/>",
+        popup = ~paste("<b>Équipement sélectionné</b><br/>",
                        "Type d'équipement:", TYPEQU, "<br/>")
-      ) %>%
+      ) |> 
       addCircleMarkers(
-        data = ville_coords,
+        data = df_sante |>  filter(LIBCOM == ville_cible, DOM == "D", TYPEQU != typequ_cible),
         ~LONGITUDE, ~LATITUDE,
         radius = 6,
         color = "blue",
         fillOpacity = 0.7,
-        popup = ~paste("<b>Ville de base</b><br/>",
+        popup = ~paste("<b>Autre équipement</b><br/>",
                        "Type d'équipement:", TYPEQU, "<br/>")
       )
   }
@@ -279,14 +275,165 @@ renderLeaflet({
 ```
 
 
+Culture
+===
+
+```{r}
+selectInput("type_lieu_culture", "Choisissez un type de batîment :", choices = unique(df_culture$`Type équipement ou lieu`))
+```
 
 
+Row valuebox
+--------------------------------------
 
+### Nombre de batîment pour la culture dans la ville
 
+```{r}
+renderValueBox({
+  ville_cible <- input$ville
+  nb_equipements <- df_culture |>  filter(LIBCOM == ville_cible) |>  nrow()
 
+  valueBox(
+    nb_equipements,
+    "Nombre d'équipements",
+    icon = "fa-globe",
+    color = "#dd3f2f"
+  )
+})
+```
 
+### Nombre moyen de batîment pour la culture dans les petites villes
 
+```{r}
+renderValueBox({
+  moyenne_petites_villes <- df_culture |> 
+    group_by(LIBCOM) |> 
+    summarise(count = n()) |> 
+    summarise(moyenne = mean(count))
 
+  valueBox(
+    round(moyenne_petites_villes$moyenne, 2),
+    "Moyenne petites villes",
+    icon = "fa-home",
+    color = "#dd3f2f"
+  )
+})
+```
 
+### Nombre moyen de batîment pour la culture dans les autres villes
+
+```{r}
+renderValueBox({
+  ville_cible <- input$ville
+  df_culture_autres_villes <- df_culture_full |>  filter(LIBCOM != ville_cible)
+
+  moyenne_autres_villes <- df_culture_autres_villes |> 
+    group_by(LIBCOM) |> 
+    summarise(count = n()) |> 
+    summarise(moyenne = mean(count))
+
+  valueBox(
+    round(moyenne_autres_villes$moyenne, 2),
+    "Moyenne autres villes",
+    icon = "fa-globe",
+    color = "#dd3f2f"
+  )
+})
+```
+
+Row graph et carte
+--------------------------------------
+
+### `r renderText({paste("Nombre de batîment culturel ", input$ville,sep ="")})`
+
+```{r}
+renderPlot({
+  ville_cible <- input$ville
+  
+  type_lieu_culture_cible <- input$type_lieu_culture
+
+  df_culture_ville <- df_culture  |> 
+    filter(LIBCOM == ville_cible) |> 
+    count(`Type équipement ou lieu`)
+
+  ggplot(df_culture_ville, aes(x = reorder(`Type équipement ou lieu`, n), y = n)) +
+    geom_bar(stat = "identity", fill = "steelblue") +
+    coord_flip() +
+    labs(x = "", y = "") +
+    theme_minimal()
+})
+```
+
+### Carte
+
+```{r}
+renderLeaflet({
+  ville_cible <- input$ville
+  type_lieu_culture_cible <- input$type_lieu_culture
+
+  df_culture_ville <- df_culture |> 
+    filter(LIBCOM == ville_cible, `Type équipement ou lieu` == type_lieu_culture_cible)
+
+  ville_coords <- df_culture |> 
+    filter(LIBCOM == ville_cible) |> 
+    select(Latitude_equipement, Longitude_equipement, `Type équipement ou lieu`) |> 
+    distinct()
+
+  if (nrow(df_culture_ville) == 0) {
+    df_culture_autres_villes <- df_culture_full |> 
+      filter(LIBCOM != ville_cible, `Type équipement ou lieu` == type_lieu_culture_cible)
+
+    df_culture_autres_villes <- df_culture_autres_villes |> 
+      mutate(distance = distHaversine(cbind(Longitude_equipement, Latitude_equipement), cbind(ville_coords$Longitude_equipement, ville_coords$Latitude_equipement)))
+
+    equipement_proche <- df_culture_autres_villes |> 
+      arrange(distance) |> 
+      head(1)
+
+    leaflet(equipement_proche) |> 
+      addTiles() |> 
+      addCircleMarkers(
+        ~Longitude_equipement, ~Latitude_equipement,
+        radius = 8,
+        color = "red",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Équipement le plus proche</b><br/>",
+                       "Type d'équipement:", `Type équipement ou lieu`, "<br/>",
+                       "Ville recommandée:", LIBCOM, "<br/>",
+                       "Distance:", round(distance / 1000, 2), "km")
+      ) |> 
+      addCircleMarkers(
+        data = ville_coords,
+        ~Longitude_equipement, ~Latitude_equipement,
+        radius = 6,
+        color = "blue",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Ville de base</b><br/>",
+                       "Type d'équipement:", `Type équipement ou lieu`, "<br/>")
+      )
+  } else {
+    leaflet(df_culture_ville) |> 
+      addTiles() |> 
+      addCircleMarkers(
+        ~Longitude_equipement, ~Latitude_equipement,
+        radius = 8,
+        color = "red",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Équipement sélectionné</b><br/>",
+                       "Type d'équipement:", `Type équipement ou lieu`, "<br/>")
+      ) |> 
+      addCircleMarkers(
+        data = df_culture |>  filter(LIBCOM == ville_cible, `Type équipement ou lieu` != type_lieu_culture_cible),
+        ~Longitude_equipement, ~Latitude_equipement,
+        radius = 6,
+        color = "blue",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Autre équipement</b><br/>",
+                       "Type d'équipement:", `Type équipement ou lieu`, "<br/>")
+      )
+  }
+})
+
+```
 
 
