@@ -14,8 +14,8 @@ df_filtered = df.filter(
     (pl.col("DOM") == "D"), 
     (pl.col("TYPEQU").str.contains("D")),
     (pl.col("LATITUDE").is_not_null() & pl.col("LONGITUDE").is_not_null()) &
-    (pl.col("LATITUDE") > 41) & (pl.col("LATITUDE") < 52) &
-    (pl.col("LONGITUDE") > -5) & (pl.col("LONGITUDE") < 9),
+    (pl.col("LATITUDE") > -90) & (pl.col("LATITUDE") < 90) &
+    (pl.col("LONGITUDE") > -180) & (pl.col("LONGITUDE") < 180) ,
     (pl.col("SDOM").is_in(["D1", "D2", "D3"]))
 ).select([
     "DOM", "SDOM", "TYPEQU", "DENS3", "DENS7",
