@@ -1,0 +1,229 @@
+---
+title: "Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    theme:
+      version: 4
+      bootswatch: journal
+      bg: "#FFFFFF"
+      fg: "#101010"
+      primary: "#DD3F2F"
+      navbar-bg: "#DD3F2F"
+      base_font: 
+        google: Roboto
+      heading_font:
+        google: Roboto
+runtime: shiny
+---
+
+<style>
+/* Cibler le titre de la section "Commerces" avec une classe plus spécifique */
+.section-header {
+  color: white !important;  /* Change la couleur du titre en blanc */
+}
+</style>
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(leaflet)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(readr)
+```
+
+```{r}
+df <- read_delim("data.csv", delim = ";", 
+    escape_double = FALSE)
+```
+
+```{r}
+pop <- read_csv("population.csv")
+```
+
+```{r}
+pop <- pop %>% filter(TIME_PERIOD == 2021)
+```
+
+```{r}
+pop$code <- gsub("[^0-9]", "", pop$code)
+```
+
+
+```{r}
+pop <- pop[, c(1, 6:7)]
+```
+
+```{r}
+colnames(pop) <- c("Code", "Population", "Commune")
+```
+
+
+
+```{r}
+# Identifier les problèmes
+problems_df <- problems(df)
+
+# Extraire les numéros de ligne problématiques
+problematic_rows <- unique(problems_df$row)
+
+# Filtrer le data frame pour retirer les lignes problématiques
+df_clean <- df %>%
+  filter(!row_number() %in% problematic_rows)
+```
+
+
+```{r}
+commerces <- df_clean %>%
+  select(X, Y, type, name, brand, wheelchair, com_nom, com_insee)
+```
+
+```{r}
+commerces <- commerces[-1, ]
+```
+
+
+```{r}
+# Traduction des types de commerces (top 30 les plus présents)
+type_translation <- c(
+  "restaurant" = "Restaurant", "clothes" = "Vêtements", "hairdresser" = "Coiffeur",
+  "bakery" = "Boulangerie", "fast_food" = "Fast food", "pharmacy" = "Pharmacie",
+  "bar" = "Bar", "bank" = "Banque", "convenience" = "Commerce de proximité",
+  "supermarket" = "Supermarché", "post_office" = "Bureau de poste",
+  "car_repair" = "Réparation automobile", "estate_agent" = "Agent immobilier",
+  "cafe" = "Café", "fuel" = "Carburant", "beauty" = "Beauté", "butcher" = "Boucher",
+  "optician" = "Opticien", "car" = "Véhicule", "insurance" = "Assurance",
+  "florist" = "Fleuriste", "car_wash" = "Lavage auto", "jewelry" = "Bijouterie",
+  "laundry" = "Pressing", "doityourself" = "Bricolage", "shoes" = "Chaussures",
+  "newsagent" = "Marchand de journaux", "driving_school" = "Auto-école",
+  "employment_agency" = "Agence d'emploi", "pub" = "Publicité"
+)
+
+# Application de la traduction
+commerces <- commerces %>% mutate(type = recode(type, !!!type_translation))
+```
+
+
+```{r}
+commerces <- commerces %>%
+  left_join(pop, by = c("com_insee" = "Code")) %>%
+  rename(nb_hab = Population)
+```
+
+```{r}
+commerces <- commerces %>% filter(!is.na(Commune))
+```
+
+
+
+
+
+
+Sidebar {.sidebar}
+===
+
+```{r}
+selectInput("ville", "Choisissez une ville :", choices = sort(unique(commerces$com_nom)))
+```
+
+```{r}
+selectInput("type_com", "Choisissez un type de commerce :", choices = unique(commerces$type))
+```
+
+Commerces
+===================================== 
+
+
+Row valuebox
+-----------------------------------------------------------------------
+
+
+### Chart A
+
+```{r}
+renderValueBox({
+    total <- commerces %>% filter(com_nom == input$ville) %>% nrow()
+    valueBox(total, "Commerces", icon = icon("store"), color = "#e46559")
+  })
+```
+
+
+### Chart B
+
+```{r}
+renderValueBox({
+    pop_ville <- pop %>% filter(Commune == input$ville) %>% pull(Population)
+    total_commerces <- commerces %>% filter(com_nom == input$ville) %>% nrow()
+    
+    commerce_habitant <- ifelse(pop_ville > 0, round((total_commerces / pop_ville) * 1000, 2), NA)
+    
+    valueBox(commerce_habitant, "Commerces pour 1000 habitants", icon = icon("users"), color = "#e46559")
+})
+```
+
+
+### Chart C
+
+```{r}
+renderValueBox({
+    total_type <- commerces %>% filter(com_nom == input$ville, type == input$type_com) %>% nrow()
+    valueBox(total_type, paste(input$type_com), icon = icon("tags"), color = "#e46559")
+})
+```
+
+
+Row 
+-----------------------------------------------------------------------
+
+### Commerces les plus nombreux
+
+```{r}
+renderPlot({
+    top5 <- commerces %>%
+      filter(com_nom == input$ville) %>%
+      count(type, sort = TRUE) %>%
+      head(5) 
+    
+    ggplot(top5, aes(x = reorder(type, n), y = n, fill = type)) +
+      geom_bar(stat = "identity") +
+      coord_flip() +
+      theme_minimal() +
+      labs(title = paste("Top 5 commerces à", input$ville), 
+           y = "Nombre de commerces", x = "") +
+      theme(legend.position = "none")
+})
+```
+
+
+### Carte des commerces
+
+```{r}
+renderLeaflet({
+    data_filtered <- commerces %>%
+      filter(com_nom == input$ville, type == input$type_com)
+    
+    leaflet(data_filtered) %>%
+      addTiles() %>%
+      addCircleMarkers(~X, ~Y, popup = ~paste(name, "<br/>", brand), 
+                       color = "blue", radius = 3)
+})
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
