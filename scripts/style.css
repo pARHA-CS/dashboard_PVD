@@ -1,0 +1,15 @@
+.navbar.navbar-inverse.navbar-fixed-top {
+    background-color: #DD3F2F; /* Couleur de fond de la navbar */
+    color: black;              /* Couleur du texte dans la navbar */
+    padding: 10px;             /* Ajouter un peu de padding pour l'esthétique */
+    font-size: 16px;           /* Taille de la police */
+}
+
+a.nav-link {
+    background-color: #DD3F2F !important; /* Couleur de fond de la navbar */
+    color: black;              /* Couleur du texte dans la navbar */
+}
+
+div#section-sidebar.section.sidebar {
+  background-color: #f8d9d5;
+}

@@ -1,29 +1,434 @@
 ---
-title: "Dashboard_PVD"
-output: html_document
-date: "2025-02-03"
+title: "Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    theme:
+      version: 4
+      bootswatch: journal
+      bg: "#FFFFFF"
+      fg: "#101010"
+      primary: "#DD3F2F"
+      navbar-bg: "#DD3F2F"
+      base_font: 
+        google: Roboto
+      heading_font:
+        google: Roboto
+runtime: shiny
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include=FALSE, context = "server"}
+library(flexdashboard)
+library(shiny)
+library(plotly)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(googledrive)
+library(tidyverse)
+library(shinyBS)
+
+library(showtext)
+library(sysfonts)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r import, cache=TRUE, message=FALSE, warning=FALSE}
+#drive_auth()
+drive_download(drive_get("https://drive.google.com/file/d/1R9-axbCNQOexMAEAJpdOVcnIpQejbI8U/view?usp=drive_link"), overwrite = TRUE)
+base_naissance <- read_delim("giga_db_naissance.csv")
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+drive_download(drive_get("https://drive.google.com/file/d/1TWyLn6F1Y4tDrR9j4IhakYb3i4hAFa3P/view?usp=drive_link"), overwrite = TRUE)
+base_deces <- read_delim("giga_db_deces.csv")
 
-```{r cars}
-summary(cars)
+drive_download(drive_get("https://drive.google.com/file/d/1uGx232rZqwvH7XZ-dsQr4FeWgkymuSzL/view?usp=drive_link"), overwrite = TRUE)
+liste_ville <- read_delim("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.csv")
+
+drive_download(drive_get("https://drive.google.com/file/d/17h-cZi642uA99ErlqiYK0MRnLwnEX-FP/view?usp=drive_link"), overwrite = TRUE)
+nbr_habitants <- read_delim("nbr_habitants_par_recensement.csv")
+
+drive_download(drive_get("https://drive.google.com/file/d/1xzhcyfC1M_2KNuX1cjuKigAxkek18-nr/view?usp=drive_link"), overwrite = TRUE)
+actifs <- read_delim("recensement_2021_actif.csv")
+
+drive_download(drive_get("https://drive.google.com/file/d/1Cl6aH8QLm89J29z4s29tr2zxbyp1f3xl/view?usp=drive_link"), overwrite = TRUE)
+famille <- read_delim("recensement_2021_famille.csv")
+
+drive_download(drive_get("https://drive.google.com/file/d/1gfV1EcotUcrlrZdZ2XlWHIpqQZS9ZVIe/view?usp=drive_link"), overwrite = TRUE)
+educ <- read_delim("recensement_2021_educ.csv")
+
+font_add_google("Roboto", "roboto")
 ```
 
-## Including Plots
+Sidebar {.sidebar}
+===
 
-You can also embed plots, for example:
+```{r}
+#Permet à l'utilisateur de sélectionner une ville parmis la liste des villes du programme
+selectInput("ville", label = "Selectionnez une ville du programme :",
+              choices = unique(liste_ville$lib_com),
+              selected = "Sancerre")
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#permet d'extraire le numéros du département associé à la ville selectionné
+code_departement <- reactive({liste_ville |> 
+    filter(lib_com == input$ville) |> 
+    pull(`Code Officiel Département`)})
+
+#Permet d'extraire le nom du département associé à la ville selectionné
+nom_departement <- reactive({liste_ville |> 
+    filter(lib_com == input$ville) |> 
+    pull(`Nom Officiel Département`)})
+
+#Permet d'extraire le nom de la région associé à la ville selectionné
+nom_region <- reactive({liste_ville |> 
+    filter(lib_com == input$ville) |> 
+    pull(`Nom Officiel Région`)})
+
+renderText({paste(input$ville, " est une ville de la région ", nom_region(), " et appartient au département : ", nom_departement() ," (" , code_departement(), ")", sep ="")})
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Naissances & Décès
+===
+
+Row valuebox
+-----------------------------------------------------------------------
+
+```{r}
+base_naissance_filtre <- reactive({filter(base_naissance, DEPNAIS == code_departement())})
+base_deces_filtre <- reactive({filter(base_deces, DEPDEC == code_departement())})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({naissance_2023 <- base_naissance_filtre() |> filter(annee == 2023)
+               valueBox(value = naissance_2023$nombre_total, caption = paste("Nombre de naissances en ", naissance_2023$annee, "dans : ", nom_departement()," (", code_departement(), ")"), color = "#dd3f2f", icon = "fa-solid fa-baby")})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({naissance_2022 <- base_naissance_filtre() |> filter(annee == 2022)
+                naissance_2023 <- base_naissance_filtre() |> filter(annee == 2023)
+               valueBox(value = naissance_2023$nombre_total - naissance_2022$nombre_total, caption = paste("Différence avec ", naissance_2022$annee), color = "#e46559", icon = "fa-solid fa-baby-carriage")})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({deces_2023 <- base_deces_filtre() |> filter(annee == 2023)
+                naissance_2023 <- base_naissance_filtre() |> filter(annee == 2023)
+               valueBox(value = naissance_2023$nombre_total - deces_2023$nombre_total, caption = paste("Différence avec le nombre de décès en ", naissance_2023$annee), color = "#eb8c82", icon = "fa-solid fa-skull-crossbones")})
+```
+
+Row 
+-----------------------------------------------------------------------
+
+### Nombre de naissances par année pour le département : `r renderText({paste(nom_departement()," (", code_departement(), ")", sep ="")})`
+
+```{r}
+renderPlotly({ #Partie ggplot pour créer le barplot
+  p <- ggplot(base_naissance_filtre(), aes(x = annee, y = nombre_total)) +
+    geom_bar(stat = "identity", fill = "#dd3f2f", color = "black") +
+    geom_text(aes(label = nombre_total, y = nombre_total * 0.90), size = 5) +
+    labs(x = "Année", y = "Nombre de naissances") +
+    theme_minimal() +
+    theme(
+      text = element_text(family = "roboto"),
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11))
+
+  ggplotly(p) |> #Partie ggplotly pour le rendre interactif et corriger la mise en page
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10))
+    )
+})
+
+```
+
+
+
+### Nombre de décès par année pour le département : `r renderText({paste(nom_departement()," (", code_departement(), ")", sep ="")})`
+
+```{r}
+renderPlotly({ #Partie ggplot pour créer le barplot
+  p <-ggplot(base_deces_filtre(), aes(x = annee, y = nombre_total)) +
+    geom_bar(stat = "identity", fill = "#775A59", color = "black") +
+    geom_text(aes(label = nombre_total, y = nombre_total * 0.90), size= 5, color = "white") +
+    labs(x = "Année", y = "Nombre de deces") +
+    theme_minimal() +
+    theme(
+      text = element_text(family = "roboto"),
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11))
+  
+  ggplotly(p) |> #Partie ggplotly pour le rendre interactif et corriger la mise en page
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10)))
+})
+```
+
+Row 
+-----------------------------------------------------------------------
+
+### Evolution entre 2016 et 2023 de l'age moyen des mères pour le département : `r renderText({paste(nom_departement()," (", code_departement(), ")", sep ="")})`
+
+```{r}
+renderPlotly({
+  p <- ggplot(base_naissance_filtre(), aes(x = annee, y = age_moy_mere)) +
+    geom_path(lineend = "round", linewidth = 1, color = "black") +
+    geom_point(color = "black", size = 2) +
+    labs(x="Année", y="Age moyen") +
+    theme_minimal()+
+    theme(
+      text = element_text(family = "roboto"),
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11))
+
+  ggplotly(p) |> #Partie ggplotly pour le rendre interactif et corriger la mise en page
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10)))
+})
+```
+
+### Evolution entre 2016 et 2021 de l'age moyen des pères pour le département : `r renderText({paste(nom_departement()," (", code_departement(), ")", sep ="")})`
+
+```{r}
+renderPlotly({
+  p <- ggplot(base_naissance_filtre(), aes(x = annee, y = as.integer(age_moy_pere))) +
+    geom_path(lineend = "square", linewidth = 1, color = "black") +
+    geom_point(color = "black", size = 2) +
+    scale_x_continuous(breaks = 2016:2021, limits = c(2016, 2021)) +
+    labs(x="Année", y="Age moyen") +
+    theme_minimal()+
+    theme(
+        text = element_text(family = "roboto"),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11))
+
+  ggplotly(p) |> #Partie ggplotly pour le rendre interactif et corriger la mise en page
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10)))
+})
+```
+
+Population
+===
+
+```{r}
+nbr_habitant_filtre <- reactive({
+    nbr_habitant_filtre <- nbr_habitants |> filter(`libelle français` == input$ville)
+    nbr_habitant_filtre$TIME_PERIOD <- factor(nbr_habitant_filtre$TIME_PERIOD, levels = sort(unique(nbr_habitant_filtre$TIME_PERIOD)))
+    
+    return(nbr_habitant_filtre)
+    })
+
+educ_filtre <- reactive({educ |> filter(`libelle français` == input$ville)})
+
+actif_filtre <- reactive({actifs |> filter(`libelle français` == input$ville)})
+```
+
+Row Gauge
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+renderValueBox({
+  nbr_hab_2021 <- nbr_habitant_filtre() |> filter(TIME_PERIOD == 2021)
+  nbr_hab_2015 <- nbr_habitant_filtre() |> filter(TIME_PERIOD == 2015)
+valueBox(value = nbr_hab_2021$OBS_VALUE - nbr_hab_2015$OBS_VALUE, caption = "Gain d'habitants entre les 2 derniers recensement", color = "#dd3f2f", icon = "fa-solid fa-person")})
+```
+
+### Parts des actifs (parmis la population)
+
+```{r}
+renderGauge({
+  nbr_habitant_filtre_2 <- nbr_habitant_filtre() |> 
+    filter(TIME_PERIOD == 2021)
+  part_actifs <- round((sum(actif_filtre()$OBS_VALUE) / nbr_habitant_filtre_2$OBS_VALUE) * 100, 0)
+  
+  gauge(part_actifs,
+        min = 0,
+        max = 100,
+        symbol = "%",
+        gaugeSectors(
+          success = c(50,100),
+          warning = c(30, 49),
+          danger = c(0,29),
+          colors = c("#DD3F2F", "#DD3F2F", "#DD3F2F")
+        ))
+})
+
+```
+
+### Parts des bachelier (parmis les 15 ans et +)
+
+```{r}
+renderGauge({
+  
+  educ_filtre_2 <- educ_filtre() |> 
+    filter(EDUC != "aucun_diplome")
+  
+  part_educ_bac <- round(sum(educ_filtre_2$OBS_VALUE) / sum(educ_filtre()$OBS_VALUE) * 100, 0)
+  
+  gauge(part_educ_bac,
+        min = 0,
+        max = 100,
+        symbol = "%",
+        gaugeSectors(
+          success = c(50,100),
+          warning = c(30, 49),
+          danger = c(0,29),
+          colors = c("#DD3F2F", "#DD3F2F", "#DD3F2F")
+        ))
+})
+```
+
+### Parts des familles avec 1 enfant et +
+
+```{r}
+renderGauge({
+  
+  famille_filtre_2 <- famille_filtre() |> 
+    filter(NCH %in% c("4_enf+", "1_enf", "2_enf", "3_enf"))
+  
+  famille_filtre_3 <- famille_filtre() |> 
+    filter(NCH %in% c("4_enf+", "1_enf", "2_enf", "3_enf", "0_enf"))
+  
+  part_famille_enfants <- round(sum(famille_filtre_2$OBS_VALUE) / sum(famille_filtre_3$OBS_VALUE) * 100, 0)
+  
+  gauge(part_famille_enfants,
+        min = 0,
+        max = 100,
+        symbol = "%",
+        gaugeSectors(
+          success = c(50,100),
+          warning = c(30, 49),
+          danger = c(0,29),
+          colors = c("#DD3F2F", "#DD3F2F", "#DD3F2F")
+        ))
+})
+```
+
+Row 
+-----------------------------------------------------------------------
+
+### Population au cours des derniers recensement à `r renderText({input$ville})`
+
+```{r}
+renderPlotly({
+  p <- ggplot(nbr_habitant_filtre(), aes(x = TIME_PERIOD, y = OBS_VALUE))+
+    geom_bar(stat = "identity", fill = "#dd3f2f",color = "black")+
+    geom_text(aes(label = OBS_VALUE, y = OBS_VALUE*0.90), size = 5)+
+    labs(x="Année de recensement", y="Nombre d'habitants") +
+    theme_minimal()+
+    theme(
+      text = element_text(family = "roboto"),
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11))
+  
+  ggplotly(p) |> #Partie ggplotly pour le rendre interactif et corriger la mise en page
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10)))
+})
+```
+
+### Effectifs des 15 ans et + (non scolarisé) selon le niveau d'étude après le recensement de `r renderText({max(famille_filtre()$TIME_PERIOD)})`
+
+```{r}
+renderPlotly({
+  p <- educ_filtre() |> mutate(EDUC = fct_reorder(EDUC, OBS_VALUE)) |> 
+    ggplot( aes(x=EDUC, y=OBS_VALUE)) +
+      geom_bar(stat="identity", fill="#775A59", color = "black", width=.6)+
+      #geom_text(aes(label = OBS_VALUE, y = OBS_VALUE * 1.05), size = 5)+
+      coord_flip() +
+      xlab("") +
+      ylab("Nombre de 15 ans et +") +
+      theme_minimal()+
+      theme(
+          text = element_text(family = "roboto"),
+          axis.title.x = element_text(size = 11),
+          axis.title.y = element_text(size = 11))
+    
+  ggplotly(p) |> #Partie ggplotly pour le rendre interactif et corriger la mise en page
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10)))
+})
+```
+
+
+Row 
+----------------------------------------------------------------------
+
+### Effectif des actifs selon le type d'emplois après le recensement de `r renderText({max(famille_filtre()$TIME_PERIOD)})`
+
+```{r}
+renderPlotly({
+  p <- actif_filtre() |> mutate(EMPFORM = fct_reorder(EMPFORM, OBS_VALUE)) |> 
+    ggplot( aes(x=EMPFORM, y=OBS_VALUE)) +
+      geom_bar(stat="identity", fill="#775A59", color = "black", width=.6)+
+      #geom_text(aes(label = OBS_VALUE, y = OBS_VALUE * 1.05), size = 5)+
+      coord_flip() +
+      xlab("") +
+      ylab("Nombre d'actifs") +
+      theme_minimal()+
+      theme(
+          text = element_text(family = "roboto"),
+          axis.title.x = element_text(size = 11),
+          axis.title.y = element_text(size = 11))
+    
+  ggplotly(p) |> #Partie ggplotly pour le rendre interactif et corriger la mise en page
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10)))
+})
+```
+
+### Effectif des familles selon le nombre d'enfants après le recensement de `r renderText({max(famille_filtre()$TIME_PERIOD)})`
+
+```{r}
+famille_filtre <- reactive({famille |> filter(`libelle français` == input$ville)})
+```
+
+```{r}
+renderPlotly({
+  p <- famille_filtre() |>  filter(NCH != "_T") |>  mutate(NCH = fct_reorder(NCH, OBS_VALUE)) |>  
+    ggplot( aes(x=NCH, y=OBS_VALUE)) +
+      geom_bar(stat="identity", fill="#775A59", color = "black", width=.6)+
+      #geom_text(aes(label = OBS_VALUE, y = OBS_VALUE*1.05), size = 5)+
+      coord_flip() +
+      xlab("") +
+      ylab("Nombres de familles") +
+      theme_minimal()+
+      theme(
+          text = element_text(family = "roboto"),
+          axis.title.x = element_text(size = 11),
+          axis.title.y = element_text(size = 11))
+  
+  ggplotly(p) |> #Partie ggplotly pour le rendre interactif et corriger la mise en page
+  layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10)))
+})
+```
+
+Energie
+===
+
+
+
+
