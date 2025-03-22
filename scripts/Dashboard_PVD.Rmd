@@ -22,6 +22,9 @@ library(flexdashboard)
 library(shiny)
 library(plotly)
 library(dplyr)
+library(arrow)
+library(leaflet)
+library(geosphere)
 library(ggplot2)
 library(readr)
 library(googledrive)
@@ -35,28 +38,62 @@ library(sysfonts)
 
 ```{r import, cache=TRUE, message=FALSE, warning=FALSE}
 #drive_auth()
-drive_download(drive_get("https://drive.google.com/file/d/1R9-axbCNQOexMAEAJpdOVcnIpQejbI8U/view?usp=drive_link"), overwrite = TRUE)
-base_naissance <- read_delim("giga_db_naissance.csv")
+#drive_download(drive_get("https://drive.google.com/file/d/1s0xWzhsXDBvtIndDDzb23PCkH_SeICLk/view?usp=drive_link"), overwrite = TRUE)
+base_naissance <- read_parquet("giga_db_naissance.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/1TWyLn6F1Y4tDrR9j4IhakYb3i4hAFa3P/view?usp=drive_link"), overwrite = TRUE)
-base_deces <- read_delim("giga_db_deces.csv")
+#drive_download(drive_get("https://drive.google.com/file/d/1NHYj96nexxfPmbtJVdJ1RmJ2BmQ6YciQ/view?usp=drive_link"), overwrite = TRUE)
+base_deces <- read_parquet("giga_db_deces.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/1uGx232rZqwvH7XZ-dsQr4FeWgkymuSzL/view?usp=drive_link"), overwrite = TRUE)
-liste_ville <- read_delim("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.csv")
+#drive_download(drive_get("https://drive.google.com/file/d/1rJYH0qEnKjfR3qapAc-ODI6xp3z9nj7Z/view?usp=drive_link"), overwrite = TRUE)
+liste_ville <- read_parquet("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/17h-cZi642uA99ErlqiYK0MRnLwnEX-FP/view?usp=drive_link"), overwrite = TRUE)
-nbr_habitants <- read_delim("nbr_habitants_par_recensement.csv")
+#drive_download(drive_get("https://drive.google.com/file/d/1ystZjTrismV_EeMyJVv43Bf_95bDBTJ1/view?usp=drive_link"), overwrite = TRUE)
+nbr_habitants <- read_parquet("nbr_habitants_par_recensement.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/1xzhcyfC1M_2KNuX1cjuKigAxkek18-nr/view?usp=drive_link"), overwrite = TRUE)
-actifs <- read_delim("recensement_2021_actif.csv")
+#drive_download(drive_get("https://drive.google.com/file/d/1bFz2nmnhE-bWeCNrESUJ_0eohLAe4lnz/view?usp=drive_link"), overwrite = TRUE)
+actifs <- read_parquet("recensement_2021_actif.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/1Cl6aH8QLm89J29z4s29tr2zxbyp1f3xl/view?usp=drive_link"), overwrite = TRUE)
-famille <- read_delim("recensement_2021_famille.csv")
+#drive_download(drive_get("https://drive.google.com/file/d/1tV3UwpObj68esUUGrokhxX9KWuIRCrwk/view?usp=drive_link"), overwrite = TRUE)
+famille <- read_parquet("recensement_2021_famille.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/1gfV1EcotUcrlrZdZ2XlWHIpqQZS9ZVIe/view?usp=drive_link"), overwrite = TRUE)
-educ <- read_delim("recensement_2021_educ.csv")
+#drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
+educ <- read_parquet("recensement_2021_educ.parquet")
+
+#drive_download(drive_get("https://drive.google.com/file/d/1YJu0YRZpKVMR6XbHvKRl_OB5ON4TD0J9/view?usp=drive_link"), overwrite = TRUE)
+df_sante <- read_parquet("BDD_simplified.parquet")
+
+#drive_download(drive_get("https://drive.google.com/file/d/1-lOeFVqS6uQhZI6igwXei1gW896KLLzd/view?usp=drive_link"), overwrite = TRUE)
+df_sante_full <- read_parquet("BDD_full_simplified.parquet")
+
+#drive_download(drive_get("https://drive.google.com/file/d/1KBrdGO8PJCPupcbKSQz1VvZ5vsxMk_La/view?usp=drive_link"), overwrite = TRUE)
+df_culture <- read_parquet("BDD_culture_simplified.parquet")
+
+#drive_download(drive_get("https://drive.google.com/file/d/129ZVqyyl4TCb3Nc2nL_i5qnEeihbIOj5/view?usp=drive_link"), overwrite = TRUE)
+df_culture_full <- read_parquet("BDD_culture_full_simplified.parquet")
 
 font_add_google("Roboto", "roboto")
+```
+
+```{r}
+write_parquet(base_naissance, "giga_db_naissance.parquet")
+write_parquet(base_deces, "giga_db_deces.parquet")
+write_parquet(liste_ville, "programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet")
+write_parquet(nbr_habitants, "nbr_habitants_par_recensement.parquet")
+write_parquet(actifs, "recensement_2021_actif.parquet")
+write_parquet(famille, "recensement_2021_famille.parquet")
+write_parquet(educ, "recensement_2021_educ.parquet")
+```
+
+```{r}
+df_test_pvd <- read_parquet("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet")
+```
+
+```{r}
+liste_ville$lib_com <- liste_ville$lib_com |> tolower()
+nbr_habitants$`libelle français` <- nbr_habitants$`libelle français` |> tolower()
+educ$`libelle français` <- educ$`libelle français`|> tolower()
+famille$`libelle français` <- famille$`libelle français` |> tolower()
+actifs$`libelle français` <- actifs$`libelle français` |> tolower()
 ```
 
 Sidebar {.sidebar}
@@ -428,6 +465,330 @@ renderPlotly({
 
 Energie
 ===
+
+Santé
+===
+
+```{r}
+selectInput("typequ", "Choisissez un type d'équipement :", choices = unique(df_sante$TYPEQU))
+```
+
+
+Row valuebox
+--------------------------------------
+
+### Nombre d'équipements dans la ville
+
+```{r}
+renderValueBox({
+  ville_cible <- input$ville
+  nb_equipements <- df_sante |>  filter(LIBCOM == ville_cible, DOM == "D") |>  nrow()
+
+  valueBox(
+    nb_equipements,
+    "Nombre d'équipements",
+    icon = "fa-hospital-o",
+    color = "#dd3f2f"
+  )
+})
+```
+
+### Nombre moyen d'équipements dans les petites villes
+
+```{r}
+renderValueBox({
+  moyenne_petites_villes <- df_sante |> 
+    filter(DOM == "D") |> 
+    group_by(LIBCOM) |> 
+    summarise(count = n()) |> 
+    summarise(moyenne = mean(count))
+
+  valueBox(
+    round(moyenne_petites_villes$moyenne, 2),
+    "Moyenne petites villes",
+    icon = "fa-home",
+    color = "#e46559"
+  )
+})
+```
+
+### Nombre moyen d'équipements dans les autres villes
+
+```{r}
+renderValueBox({
+  ville_cible <- input$ville
+  df_sante_autres_villes <- df_sante_full |>  filter(LIBCOM != ville_cible, DOM == "D")
+
+  moyenne_autres_villes <- df_sante_autres_villes |> 
+    group_by(LIBCOM) |> 
+    summarise(count = n()) |> 
+    summarise(moyenne = mean(count))
+
+  valueBox(
+    round(moyenne_autres_villes$moyenne, 2),
+    "Moyenne autres villes",
+    icon = "fa-globe",
+    color = "#eb8c82"
+  )
+})
+```
+
+
+Row graph et carte
+--------------------------------------
+
+### `r renderText({paste("Nombre d'équipements de santé à ", input$ville,sep ="")})`
+
+```{r}
+renderPlot({
+  ville_cible <- input$ville
+  typequ_cible <- input$typequ
+
+  df_sante_ville <- df_sante |> 
+    filter(LIBCOM == ville_cible, DOM == "D") |> 
+    count(TYPEQU)
+
+  ggplot(df_sante_ville, aes(x = reorder(TYPEQU, n), y = n)) +
+    geom_bar(stat = "identity", fill = "#e46559") +
+    coord_flip() +
+    labs(x = "", y = "") +
+    theme_minimal()
+})
+```
+
+### Carte
+
+```{r}
+renderLeaflet({
+  ville_cible <- input$ville
+  typequ_cible <- input$typequ
+
+  df_sante_ville <- df_sante |> 
+    filter(LIBCOM == ville_cible, DOM == "D", TYPEQU == typequ_cible)
+
+  ville_coords <- df_sante |> 
+    filter(LIBCOM == ville_cible) |> 
+    select(LATITUDE, LONGITUDE, TYPEQU) |> 
+    distinct()
+
+  if (nrow(df_sante_ville) == 0) {
+    df_sante_autres_villes <- df_sante_full |> 
+      filter(LIBCOM != ville_cible, DOM == "D", TYPEQU == typequ_cible)
+
+    df_sante_autres_villes <- df_sante_autres_villes |> 
+      mutate(distance = distHaversine(cbind(LONGITUDE, LATITUDE), cbind(ville_coords$LONGITUDE, ville_coords$LATITUDE)))
+
+    equipement_proche <- df_sante_autres_villes |> 
+      arrange(distance) |> 
+      head(1)
+
+    leaflet(equipement_proche) |> 
+      addTiles() |> 
+      addCircleMarkers(
+        ~LONGITUDE, ~LATITUDE,
+        radius = 8,
+        color = "red",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Équipement le plus proche</b><br/>",
+                       "Type d'équipement:", TYPEQU, "<br/>",
+                       "Ville recommandée:", LIBCOM, "<br/>",
+                       "Distance:", round(distance / 1000, 2), "km")
+      ) |> 
+      addCircleMarkers(
+        data = ville_coords,
+        ~LONGITUDE, ~LATITUDE,
+        radius = 6,
+        color = "blue",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Ville de base</b><br/>",
+                       "Type d'équipement:", TYPEQU, "<br/>")
+      )
+  } else {
+    leaflet(df_sante_ville) |> 
+      addTiles() |> 
+      addCircleMarkers(
+        ~LONGITUDE, ~LATITUDE,
+        radius = 8,
+        color = "red",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Équipement sélectionné</b><br/>",
+                       "Type d'équipement:", TYPEQU, "<br/>")
+      ) |> 
+      addCircleMarkers(
+        data = df_sante |>  filter(LIBCOM == ville_cible, DOM == "D", TYPEQU != typequ_cible),
+        ~LONGITUDE, ~LATITUDE,
+        radius = 6,
+        color = "blue",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Autre équipement</b><br/>",
+                       "Type d'équipement:", TYPEQU, "<br/>")
+      )
+  }
+})
+
+```
+
+
+Culture
+===
+
+```{r}
+selectInput("type_lieu_culture", "Choisissez un type de bâtiment :", choices = unique(df_culture$`Type équipement ou lieu`))
+```
+
+
+Row valuebox
+--------------------------------------
+
+### Nombre de bâtiment pour la culture dans la ville
+
+```{r}
+renderValueBox({
+  ville_cible <- input$ville
+  nb_equipements <- df_culture |>  filter(LIBCOM == ville_cible) |>  nrow()
+
+  valueBox(
+    nb_equipements,
+    "Nombre de bâtiments",
+    icon = "fa-globe",
+    color = "#dd3f2f"
+  )
+})
+```
+
+### Nombre moyen de bâtiment pour la culture dans les petites villes
+
+```{r}
+renderValueBox({
+  moyenne_petites_villes <- df_culture |> 
+    group_by(LIBCOM) |> 
+    summarise(count = n()) |> 
+    summarise(moyenne = mean(count))
+
+  valueBox(
+    round(moyenne_petites_villes$moyenne, 2),
+    "Moyenne petites villes",
+    icon = "fa-home",
+    color = "#e46559"
+  )
+})
+```
+
+### Nombre moyen de bâtiment pour la culture dans les autres villes
+
+```{r}
+renderValueBox({
+  ville_cible <- input$ville
+  df_culture_autres_villes <- df_culture_full |>  filter(LIBCOM != ville_cible)
+
+  moyenne_autres_villes <- df_culture_autres_villes |> 
+    group_by(LIBCOM) |> 
+    summarise(count = n()) |> 
+    summarise(moyenne = mean(count))
+
+  valueBox(
+    round(moyenne_autres_villes$moyenne, 2),
+    "Moyenne autres villes",
+    icon = "fa-globe",
+    color = "#eb8c82"
+  )
+})
+```
+
+Row graph et carte
+--------------------------------------
+
+### `r renderText({paste("Nombre de bâtiment culturel ", input$ville,sep ="")})`
+
+```{r}
+renderPlot({
+  ville_cible <- input$ville
+  
+  type_lieu_culture_cible <- input$type_lieu_culture
+
+  df_culture_ville <- df_culture  |> 
+    filter(LIBCOM == ville_cible) |> 
+    count(`Type équipement ou lieu`)
+
+  ggplot(df_culture_ville, aes(x = reorder(`Type équipement ou lieu`, n), y = n)) +
+    geom_bar(stat = "identity", fill = "#e46559") +
+    coord_flip() +
+    labs(x = "", y = "") +
+    theme_minimal()
+})
+```
+
+### Carte
+
+```{r}
+renderLeaflet({
+  ville_cible <- input$ville
+  type_lieu_culture_cible <- input$type_lieu_culture
+
+  df_culture_ville <- df_culture |> 
+    filter(LIBCOM == ville_cible, `Type équipement ou lieu` == type_lieu_culture_cible)
+
+  ville_coords <- df_culture |> 
+    filter(LIBCOM == ville_cible) |> 
+    select(Latitude_equipement, Longitude_equipement, `Type équipement ou lieu`) |> 
+    distinct()
+
+  if (nrow(df_culture_ville) == 0) {
+    df_culture_autres_villes <- df_culture_full |> 
+      filter(LIBCOM != ville_cible, `Type équipement ou lieu` == type_lieu_culture_cible)
+
+    df_culture_autres_villes <- df_culture_autres_villes |> 
+      mutate(distance = distHaversine(cbind(Longitude_equipement, Latitude_equipement), cbind(ville_coords$Longitude_equipement, ville_coords$Latitude_equipement)))
+
+    equipement_proche <- df_culture_autres_villes |> 
+      arrange(distance) |> 
+      head(1)
+
+    leaflet(equipement_proche) |> 
+      addTiles() |> 
+      addCircleMarkers(
+        ~Longitude_equipement, ~Latitude_equipement,
+        radius = 8,
+        color = "red",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Équipement le plus proche</b><br/>",
+                       "Type d'équipement:", `Type équipement ou lieu`, "<br/>",
+                       "Ville recommandée:", LIBCOM, "<br/>",
+                       "Distance:", round(distance / 1000, 2), "km")
+      ) |> 
+      addCircleMarkers(
+        data = ville_coords,
+        ~Longitude_equipement, ~Latitude_equipement,
+        radius = 6,
+        color = "blue",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Ville de base</b><br/>",
+                       "Type d'équipement:", `Type équipement ou lieu`, "<br/>")
+      )
+  } else {
+    leaflet(df_culture_ville) |> 
+      addTiles() |> 
+      addCircleMarkers(
+        ~Longitude_equipement, ~Latitude_equipement,
+        radius = 8,
+        color = "red",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Équipement sélectionné</b><br/>",
+                       "Type d'équipement:", `Type équipement ou lieu`, "<br/>")
+      ) |> 
+      addCircleMarkers(
+        data = df_culture |>  filter(LIBCOM == ville_cible, `Type équipement ou lieu` != type_lieu_culture_cible),
+        ~Longitude_equipement, ~Latitude_equipement,
+        radius = 6,
+        color = "blue",
+        fillOpacity = 0.7,
+        popup = ~paste("<b>Autre équipement</b><br/>",
+                       "Type d'équipement:", `Type équipement ou lieu`, "<br/>")
+      )
+  }
+})
+
+```
 
 
 

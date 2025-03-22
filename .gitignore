@@ -1,1 +1,14 @@
 data/
+
+scripts/BDD_culture_full_simplified.parquet
+scripts/BDD_culture_simplified.parquet
+scripts/BDD_full_simplified.parquet
+scripts/BDD_simplified.parquet
+scripts/giga_db_deces.parquet
+scripts/giga_db_naissance.parquet
+scripts/nbr_habitants_par_recensement.parquet
+scripts/programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet
+scripts/pvd_simplified.parquet
+scripts/recensement_2021_actif.parquet
+scripts/recensement_2021_educ.parquet
+scripts/recensement_2021_famille.parquet
