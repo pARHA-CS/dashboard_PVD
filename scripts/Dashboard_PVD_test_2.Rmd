@@ -18,6 +18,7 @@ library(leaflet)
 library(geosphere)
 library(plotly)
 
+data_path_PVD <- file.path("..", "data", "pvd_simplified.parquet")
 data_path_simplified <- file.path("..", "data", "sante", "BDD_simplified.parquet")
 data_path_full <- file.path("..", "data", "sante", "BDD_full_simplified.parquet")
 data_path_culture_simplified <- file.path("..", "data", "culture", "BDD_culture_simplified.parquet")
@@ -25,6 +26,7 @@ data_path_culture_full <- file.path("..", "data", "culture", "BDD_culture_full_s
 data_path_festival_simplified <- file.path("..", "data", "culture", "BDD_festival_simplified.parquet")
 data_path_festival_full <- file.path("..", "data", "culture", "BDD_festival_full_simplified.parquet")
 
+df_PVD <- read_parquet(data_path_PVD)
 df_sante <- read_parquet(data_path_simplified)
 df_sante_full <- read_parquet(data_path_full)
 df_culture <-  read_parquet(data_path_culture_simplified)
@@ -37,8 +39,7 @@ Sidebar {.sidebar}
 ===
 
 ```{r}
-selectInput("ville", "Choisissez une ville :", choices = unique(df_sante$LIBCOM))
-
+selectInput("ville", "Choisissez une ville :", choices = unique(df_PVD$lib_com))
 ```
 
 Santé
