@@ -50,18 +50,13 @@ liste_ville <- read_parquet("programme-petites-villes-de-demain-liste-des-villes
 #drive_download(drive_get("https://drive.google.com/file/d/1ystZjTrismV_EeMyJVv43Bf_95bDBTJ1/view?usp=drive_link"), overwrite = TRUE)
 nbr_habitants <- read_parquet("nbr_habitants_par_recensement.parquet")
 
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
 #drive_download(drive_get("https://drive.google.com/file/d/1bFz2nmnhE-bWeCNrESUJ_0eohLAe4lnz/view?usp=drive_link"), overwrite = TRUE)
 actifs <- read_parquet("recensement_2021_actif.parquet")
 
 #drive_download(drive_get("https://drive.google.com/file/d/1tV3UwpObj68esUUGrokhxX9KWuIRCrwk/view?usp=drive_link"), overwrite = TRUE)
 famille <- read_parquet("recensement_2021_famille.parquet")
 
-<<<<<<< Updated upstream
-=======
 #drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
 educ <- read_parquet("recensement_2021_educ.parquet")
 educ$code <- sub("^COM-", "", educ$code)
@@ -69,7 +64,6 @@ educ$code <- sub("^COM-", "", educ$code)
 #drive_download(drive_get("https://drive.google.com/file/d/1ndWTCaUwTq9lfEViT4POPld6D2sny3s9/view?usp=drive_link"), overwrite = TRUE)
 conso_elec <- read_parquet("conso_final_elec.parquet")
 
->>>>>>> Stashed changes
 #drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
 educ <- read_parquet("recensement_2021_educ.parquet")
 
@@ -123,6 +117,10 @@ nom_departement <- reactive({liste_ville |>
 nom_region <- reactive({liste_ville |> 
     filter(lib_com == input$ville) |> 
     pull(`Nom Officiel Région`)})
+
+code_com <- reactive({liste_ville |> 
+    filter(lib_com == input$ville) |> 
+    pull(insee_com)})
 
 renderText({paste(input$ville, " est une ville de la région ", nom_region(), " et appartient au département : ", nom_departement() ," (" , code_departement(), ")", sep ="")})
 ```
@@ -1022,18 +1020,13 @@ renderLeaflet({
 
 ```
 
-<<<<<<< Updated upstream
-=======
 Commerces
 ===================================== 
->>>>>>> Stashed changes
 
 ```{r}
 selectInput("type_com", "Choisissez un type de commerce :", choices = unique(commerces$type))
 ```
 
-<<<<<<< Updated upstream
-=======
 Row valuebox
 -----------------------------------------------------------------------
 
@@ -1109,6 +1102,5 @@ renderLeaflet({
 })
 ```
 
->>>>>>> Stashed changes
 
 
