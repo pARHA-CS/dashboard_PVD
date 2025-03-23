@@ -770,7 +770,7 @@ Row graph et carte
 ### `r renderText({paste("Nombre d'équipements de santé à ", input$ville,sep ="")})`
 
 ```{r}
-renderPlot({
+renderPlotly({
   ville_cible <- input$ville
   typequ_cible <- input$typequ
 
@@ -778,13 +778,23 @@ renderPlot({
     filter(LIBCOM == ville_cible, DOM == "D") |> 
     count(TYPEQU)
 
-  ggplot(df_sante_ville, aes(x = reorder(TYPEQU, n), y = n)) +
+  p <- ggplot(df_sante_ville, aes(
+      x = reorder(TYPEQU, n),
+      y = n,
+      text = paste0("Type: ", TYPEQU, "<br>Nombre: ", n)
+    )) +
     geom_bar(stat = "identity", fill = "#e46559") +
     coord_flip() +
     labs(x = "", y = "") +
-    theme_minimal()
+    theme_minimal() +
+    theme(axis.text.y = element_text(size = 4))
+
+  ggplotly(p, tooltip = "text")
 })
+
 ```
+
+
 
 ### Carte
 
@@ -880,7 +890,7 @@ renderValueBox({
   valueBox(
     nb_equipements,
     "Nombre de bâtiments",
-    icon = "fa-globe",
+    icon = "fa-home",
     color = "#dd3f2f"
   )
 })
@@ -931,21 +941,26 @@ Row graph et carte
 ### `r renderText({paste("Nombre de bâtiment culturel ", input$ville,sep ="")})`
 
 ```{r}
-renderPlot({
+renderPlotly({
   ville_cible <- input$ville
   
-  type_lieu_culture_cible <- input$type_lieu_culture
-
-  df_culture_ville <- df_culture  |> 
+  df_culture_ville <- df_culture |> 
     filter(LIBCOM == ville_cible) |> 
     count(`Type équipement ou lieu`)
 
-  ggplot(df_culture_ville, aes(x = reorder(`Type équipement ou lieu`, n), y = n)) +
+  p <- ggplot(df_culture_ville, aes(
+      x = reorder(`Type équipement ou lieu`, n),
+      y = n,
+      text = paste0("Type: ", `Type équipement ou lieu`, "<br>Nombre: ", n)
+    )) +
     geom_bar(stat = "identity", fill = "#e46559") +
     coord_flip() +
     labs(x = "", y = "") +
     theme_minimal()
+
+  ggplotly(p, tooltip = "text")
 })
+
 ```
 
 ### Carte
