@@ -50,12 +50,26 @@ liste_ville <- read_parquet("programme-petites-villes-de-demain-liste-des-villes
 #drive_download(drive_get("https://drive.google.com/file/d/1ystZjTrismV_EeMyJVv43Bf_95bDBTJ1/view?usp=drive_link"), overwrite = TRUE)
 nbr_habitants <- read_parquet("nbr_habitants_par_recensement.parquet")
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 #drive_download(drive_get("https://drive.google.com/file/d/1bFz2nmnhE-bWeCNrESUJ_0eohLAe4lnz/view?usp=drive_link"), overwrite = TRUE)
 actifs <- read_parquet("recensement_2021_actif.parquet")
 
 #drive_download(drive_get("https://drive.google.com/file/d/1tV3UwpObj68esUUGrokhxX9KWuIRCrwk/view?usp=drive_link"), overwrite = TRUE)
 famille <- read_parquet("recensement_2021_famille.parquet")
 
+<<<<<<< Updated upstream
+=======
+#drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
+educ <- read_parquet("recensement_2021_educ.parquet")
+educ$code <- sub("^COM-", "", educ$code)
+
+#drive_download(drive_get("https://drive.google.com/file/d/1ndWTCaUwTq9lfEViT4POPld6D2sny3s9/view?usp=drive_link"), overwrite = TRUE)
+conso_elec <- read_parquet("conso_final_elec.parquet")
+
+>>>>>>> Stashed changes
 #drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
 educ <- read_parquet("recensement_2021_educ.parquet")
 
@@ -71,30 +85,20 @@ df_culture <- read_parquet("BDD_culture_simplified.parquet")
 #drive_download(drive_get("https://drive.google.com/file/d/129ZVqyyl4TCb3Nc2nL_i5qnEeihbIOj5/view?usp=drive_link"), overwrite = TRUE)
 df_culture_full <- read_parquet("BDD_culture_full_simplified.parquet")
 
+#drive_download(drive_get("https://drive.google.com/file/d/1gBfEVzdDmnAUofxH_H8wK8Q7trWpGkIs/view?usp=drive_link"), overwrite = TRUE)
+commerces <- read_parquet("commerces.parquet")
+
+#drive_download(drive_get("https://drive.google.com/file/d/1F8zAuEu7_xziT2vevGzHNrYnYr1h9y_l/view?usp=drive_link"), overwrite = TRUE)
+pop <- read_parquet("population.parquet")
 font_add_google("Roboto", "roboto")
 ```
 
 ```{r}
-write_parquet(base_naissance, "giga_db_naissance.parquet")
-write_parquet(base_deces, "giga_db_deces.parquet")
-write_parquet(liste_ville, "programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet")
-write_parquet(nbr_habitants, "nbr_habitants_par_recensement.parquet")
-write_parquet(actifs, "recensement_2021_actif.parquet")
-write_parquet(famille, "recensement_2021_famille.parquet")
-write_parquet(educ, "recensement_2021_educ.parquet")
+pop$Commune <- pop$Commune |> tolower()
+
+write_parquet(pop, "population.parquet")
 ```
 
-```{r}
-df_test_pvd <- read_parquet("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet")
-```
-
-```{r}
-liste_ville$lib_com <- liste_ville$lib_com |> tolower()
-nbr_habitants$`libelle français` <- nbr_habitants$`libelle français` |> tolower()
-educ$`libelle français` <- educ$`libelle français`|> tolower()
-famille$`libelle français` <- famille$`libelle français` |> tolower()
-actifs$`libelle français` <- actifs$`libelle français` |> tolower()
-```
 
 Sidebar {.sidebar}
 ===
@@ -466,6 +470,234 @@ renderPlotly({
 Energie
 ===
 
+```{r}
+conso_elec_filtre <- reactive({conso_elec |> filter(`Code Commune` == code_com())})
+```
+
+
+Row valuebox
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+renderValueBox({
+  valueBox(
+    value = first(conso_elec_filtre()$OPERATEUR), 
+    caption = paste("Opérateur de la ville de : ", input$ville), 
+    color = "#dd3f2f", 
+    icon = "fa-solid fa-plug-circle-bolt")})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({
+  valueBox(
+    value = paste0(
+    round(sum(conso_elec_filtre() |> filter(Année == 2023) |> pull(`Conso totale (MWh)`)), 0), 
+    " MWh"
+  ),
+  caption = "Consommation Totale en 2023",
+  color = "#e46559", 
+  icon = "fa-solid fa-bolt")})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({
+  conso_2023 <- sum(conso_elec_filtre() |> filter(Année == 2023) |> pull(`Conso totale (MWh)`))
+  conso_2022 <- sum(conso_elec_filtre() |> filter(Année == 2022) |> pull(`Conso totale (MWh)`))
+variation <- round(((conso_2023 - conso_2022) / conso_2022) * 100, 1)
+valueBox(
+  value = paste0(ifelse(variation >= 0, "+", ""), variation, "%"),
+  caption = "Évolution par rapport à 2022",
+  color = ifelse(variation >= 0, "danger", "success"), 
+  icon = "fa-solid fa-chart-line"
+)})
+```
+
+Row 
+----------------------------------------------------------------------
+
+
+### Consommation totale d'Electricité au fil du temps par grand secteur
+
+```{r}
+renderPlotly({
+  p <- conso_elec_filtre() |> 
+    ggplot(aes(
+      x = factor(Année), 
+      y = `Conso totale (MWh)`, 
+      fill = `CODE GRAND SECTEUR`,
+      text = paste0(
+        "Année: ", Année, "<br>",
+        "Secteur: ", `CODE GRAND SECTEUR`, "<br>",
+        "Consommation: ", `Conso totale (MWh)`, " MWh"
+      )
+    )) +
+    geom_bar(stat = "identity", position = "stack") +
+    labs(
+      x = "Année",
+      y = "Consommation Totale (MWh)",
+      fill = "Secteur"
+    ) +
+    scale_fill_manual(values = c(
+      "TERTIAIRE" = "#dd3f2f", 
+      "AGRICULTURE" = "#dcd0d0", 
+      "INDUSTRIE" = "#775a59", 
+      "RESIDENTIEL" = "#8a0707", 
+      "INCONNU" = "#000000"
+    )) +
+    theme_minimal()+
+    theme(
+      text = element_text(family = "roboto"),
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11),
+      legend.position = "none")
+
+  ggplotly(p, tooltip = "text") |> 
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10))
+    )
+})
+```
+
+### Nombre de site consommateur d'Electricité par grand secteur
+
+```{r}
+renderPlotly({
+  p <- conso_elec_filtre() |>  
+    filter(Année %in% c(2021,2022,2023)) |> 
+    ggplot(aes(
+      x = reorder(`CODE GRAND SECTEUR`, `Nb sites`),
+      y = `Nb sites`,
+      fill = factor(Année, levels = c("2023", "2022", "2021")),
+      text = paste0(
+        "Secteur: ", `CODE GRAND SECTEUR`, "<br>",
+        "Nombre de sites : ", `Nb sites`, "<br>",
+        "Année: ", Année
+      ) # <- Ajout de `text` dans aes()
+    )) +
+    geom_bar(stat = "identity", position = "dodge", color = "black", width = 0.7) +
+    coord_flip() +
+    xlab("") +
+    ylab("Nombre de sites") +
+    scale_fill_manual(
+      values = c(
+        "2021" = "#dd3f2f",
+        "2023" = "#dcd0d0",
+        "2022" = "#775a59"
+      )
+    ) +
+    theme_minimal() +
+    theme(
+      text = element_text(family = "roboto"),
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11),
+      legend.position = "none" # Supprime la légende
+    ) +
+    labs(fill = "Année")
+
+  ggplotly(p, tooltip = "text") |> 
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10))
+    )
+})
+
+```
+
+Row 
+----------------------------------------------------------------------
+
+### Répartition de la consommationn d'Electricité par Grand Secteur en 2017
+
+```{r}
+renderPlot({
+  data <- conso_elec_filtre() |> 
+    filter(Année == 2017) |> 
+    mutate(percentage = `Conso totale (MWh)` / sum(`Conso totale (MWh)`) * 100)
+
+  labels_secteurs <- setNames(
+    paste0(unique(data$`CODE GRAND SECTEUR`), " (", 
+           round(data$percentage, 1), "%)"), 
+    unique(data$`CODE GRAND SECTEUR`)
+  )
+
+  ggplot(data, aes(
+    x = "", 
+    y = `Conso totale (MWh)`, 
+    fill = `CODE GRAND SECTEUR`
+  )) +
+    geom_bar(width = 1, stat = "identity", color = "white") +
+    coord_polar("y", start = 0) +
+    labs(fill = "Secteur") +
+    theme_void() +
+    scale_fill_manual(
+      values = c(
+        "TERTIAIRE" = "#dd3f2f", 
+        "AGRICULTURE" = "#dcd0d0",
+        "INDUSTRIE" = "#775a59", 
+        "RESIDENTIEL" = "#8a0707",
+        "INCONNU" = "#f7f6f7"
+      ),
+      labels = labels_secteurs  # Ajout des % dans la légende
+    ) +
+    theme(
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 16, face = "bold")
+    )
+})
+
+```
+
+### Répartition de la consommation d'Electricité par Grand Secteur en 2023
+
+```{r}
+renderPlot({
+  data <- conso_elec_filtre() |> 
+    filter(Année == 2023) |> 
+    mutate(percentage = `Conso totale (MWh)` / sum(`Conso totale (MWh)`) * 100)  # Calcul des %
+
+  # Création d'un vecteur de labels avec les noms des secteurs et leurs %
+  labels_secteurs <- setNames(
+    paste0(unique(data$`CODE GRAND SECTEUR`), " (", 
+           round(data$percentage, 1), "%)"), 
+    unique(data$`CODE GRAND SECTEUR`)
+  )
+
+  ggplot(data, aes(
+    x = "", 
+    y = `Conso totale (MWh)`, 
+    fill = `CODE GRAND SECTEUR`
+  )) +
+    geom_bar(width = 1, stat = "identity", color = "white") +
+    coord_polar("y", start = 0) +
+    labs(fill = "Secteur") +
+    theme_void() +
+    scale_fill_manual(
+      values = c(
+        "TERTIAIRE" = "#dd3f2f", 
+        "AGRICULTURE" = "#dcd0d0",
+        "INDUSTRIE" = "#775a59", 
+        "RESIDENTIEL" = "#8a0707",
+        "INCONNU" = "#f7f6f7"
+      ),
+      labels = labels_secteurs  # Ajout des % dans la légende
+    ) +
+    theme(
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 16, face = "bold")
+    )
+})
+
+```
+
 Santé
 ===
 
@@ -790,6 +1022,93 @@ renderLeaflet({
 
 ```
 
+<<<<<<< Updated upstream
+=======
+Commerces
+===================================== 
+>>>>>>> Stashed changes
 
+```{r}
+selectInput("type_com", "Choisissez un type de commerce :", choices = unique(commerces$type))
+```
+
+<<<<<<< Updated upstream
+=======
+Row valuebox
+-----------------------------------------------------------------------
+
+
+### Chart A
+
+```{r}
+renderValueBox({
+    total <- commerces %>% filter(com_nom == input$ville) %>% nrow()
+    valueBox(total, "Commerces", icon = icon("store"), color = "#e46559")
+  })
+```
+
+
+### Chart B
+
+```{r}
+renderValueBox({
+    pop_ville <- pop %>% filter(Commune == input$ville) %>% pull(Population)
+    total_commerces <- commerces %>% filter(com_nom == input$ville) %>% nrow()
+    
+    commerce_habitant <- ifelse(pop_ville > 0, round((total_commerces / pop_ville) * 1000, 2), NA)
+    
+    valueBox(commerce_habitant, "Commerces pour 1000 habitants", icon = icon("users"), color = "#e46559")
+})
+```
+
+
+### Chart C
+
+```{r}
+renderValueBox({
+    total_type <- commerces %>% filter(com_nom == input$ville, type == input$type_com) %>% nrow()
+    valueBox(total_type, paste(input$type_com), icon = icon("tags"), color = "#e46559")
+})
+```
+
+
+Row 
+-----------------------------------------------------------------------
+
+### Commerces les plus nombreux
+
+```{r}
+renderPlot({
+    top5 <- commerces %>%
+      filter(com_nom == input$ville) %>%
+      count(type, sort = TRUE) %>%
+      head(5) 
+    
+    ggplot(top5, aes(x = reorder(type, n), y = n, fill = type)) +
+      geom_bar(stat = "identity") +
+      coord_flip() +
+      theme_minimal() +
+      labs(title = paste("Top 5 commerces à", input$ville), 
+           y = "Nombre de commerces", x = "") +
+      theme(legend.position = "none")
+})
+```
+
+
+### Carte des commerces
+
+```{r}
+renderLeaflet({
+    data_filtered <- commerces %>%
+      filter(com_nom == input$ville, type == input$type_com)
+    
+    leaflet(data_filtered) %>%
+      addTiles() %>%
+      addCircleMarkers(~X, ~Y, popup = ~paste(name, "<br/>", brand), 
+                       color = "blue", radius = 3)
+})
+```
+
+>>>>>>> Stashed changes
 
 
