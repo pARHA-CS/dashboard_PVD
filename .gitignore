@@ -12,3 +12,7 @@ scripts/pvd_simplified.parquet
 scripts/recensement_2021_actif.parquet
 scripts/recensement_2021_educ.parquet
 scripts/recensement_2021_famille.parquet
+
+scripts/Dashboard_PVD_cache/html/import_cf02f30d5ef81804c1fdba34b579cf8b.RData
+scripts/Dashboard_PVD_cache/html/import_cf02f30d5ef81804c1fdba34b579cf8b.rdb
+scripts/Dashboard_PVD_cache/html/import_cf02f30d5ef81804c1fdba34b579cf8b.rdx
