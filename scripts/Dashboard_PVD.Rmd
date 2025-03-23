@@ -36,7 +36,7 @@ library(sysfonts)
 
 
 ```{r import, cache=TRUE, message=FALSE, warning=FALSE}
-#drive_auth()
+drive_auth()
 drive_download(drive_get("https://drive.google.com/file/d/1s0xWzhsXDBvtIndDDzb23PCkH_SeICLk/view?usp=drive_link"), overwrite = TRUE)
 base_naissance <- read_parquet("giga_db_naissance.parquet")
 
