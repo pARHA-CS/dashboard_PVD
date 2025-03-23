@@ -27,6 +27,8 @@ library(readr)
 library(googledrive)
 library(tidyverse)
 library(shinyBS)
+library(viridis)
+library(arrow)
 
 library(showtext)
 library(sysfonts)
@@ -35,26 +37,34 @@ library(sysfonts)
 
 ```{r import, cache=TRUE, message=FALSE, warning=FALSE}
 #drive_auth()
-drive_download(drive_get("https://drive.google.com/file/d/1R9-axbCNQOexMAEAJpdOVcnIpQejbI8U/view?usp=drive_link"), overwrite = TRUE)
-base_naissance <- read_delim("giga_db_naissance.csv")
+drive_download(drive_get("https://drive.google.com/file/d/1s0xWzhsXDBvtIndDDzb23PCkH_SeICLk/view?usp=drive_link"), overwrite = TRUE)
+base_naissance <- read_parquet("giga_db_naissance.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/1TWyLn6F1Y4tDrR9j4IhakYb3i4hAFa3P/view?usp=drive_link"), overwrite = TRUE)
-base_deces <- read_delim("giga_db_deces.csv")
+drive_download(drive_get("https://drive.google.com/file/d/1NHYj96nexxfPmbtJVdJ1RmJ2BmQ6YciQ/view?usp=drive_link"), overwrite = TRUE)
+base_deces <- read_parquet("giga_db_deces.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/1uGx232rZqwvH7XZ-dsQr4FeWgkymuSzL/view?usp=drive_link"), overwrite = TRUE)
-liste_ville <- read_delim("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.csv")
+drive_download(drive_get("https://drive.google.com/file/d/1rJYH0qEnKjfR3qapAc-ODI6xp3z9nj7Z/view?usp=drive_link"), overwrite = TRUE)
+liste_ville <- read_parquet("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/17h-cZi642uA99ErlqiYK0MRnLwnEX-FP/view?usp=drive_link"), overwrite = TRUE)
-nbr_habitants <- read_delim("nbr_habitants_par_recensement.csv")
+drive_download(drive_get("https://drive.google.com/file/d/1ystZjTrismV_EeMyJVv43Bf_95bDBTJ1/view?usp=drive_link"), overwrite = TRUE)
+nbr_habitants <- read_parquet("nbr_habitants_par_recensement.parquet")
+nbr_habitants$code <- sub("^COM-", "", nbr_habitants$code)
 
-drive_download(drive_get("https://drive.google.com/file/d/1xzhcyfC1M_2KNuX1cjuKigAxkek18-nr/view?usp=drive_link"), overwrite = TRUE)
-actifs <- read_delim("recensement_2021_actif.csv")
 
-drive_download(drive_get("https://drive.google.com/file/d/1Cl6aH8QLm89J29z4s29tr2zxbyp1f3xl/view?usp=drive_link"), overwrite = TRUE)
-famille <- read_delim("recensement_2021_famille.csv")
+drive_download(drive_get("https://drive.google.com/file/d/1bFz2nmnhE-bWeCNrESUJ_0eohLAe4lnz/view?usp=drive_link"), overwrite = TRUE)
+actifs <- read_parquet("recensement_2021_actif.parquet")
+actifs$code <- sub("^COM-", "", actifs$code)
 
-drive_download(drive_get("https://drive.google.com/file/d/1gfV1EcotUcrlrZdZ2XlWHIpqQZS9ZVIe/view?usp=drive_link"), overwrite = TRUE)
-educ <- read_delim("recensement_2021_educ.csv")
+drive_download(drive_get("https://drive.google.com/file/d/1tV3UwpObj68esUUGrokhxX9KWuIRCrwk/view?usp=drive_link"), overwrite = TRUE)
+famille <- read_parquet("recensement_2021_famille.parquet")
+famille$code <- sub("^COM-", "", famille$code)
+
+drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
+educ <- read_parquet("recensement_2021_educ.parquet")
+educ$code <- sub("^COM-", "", educ$code)
+
+drive_download(drive_get("https://drive.google.com/file/d/1ndWTCaUwTq9lfEViT4POPld6D2sny3s9/view?usp=drive_link"), overwrite = TRUE)
+conso_elec <- read_parquet("conso_final_elec.parquet")
 
 font_add_google("Roboto", "roboto")
 ```
@@ -66,7 +76,7 @@ Sidebar {.sidebar}
 #Permet à l'utilisateur de sélectionner une ville parmis la liste des villes du programme
 selectInput("ville", label = "Selectionnez une ville du programme :",
               choices = unique(liste_ville$lib_com),
-              selected = "Sancerre")
+              selected = "sancerre")
 
 #permet d'extraire le numéros du département associé à la ville selectionné
 code_departement <- reactive({liste_ville |> 
@@ -82,6 +92,10 @@ nom_departement <- reactive({liste_ville |>
 nom_region <- reactive({liste_ville |> 
     filter(lib_com == input$ville) |> 
     pull(`Nom Officiel Région`)})
+
+code_com <- reactive({liste_ville |> 
+    filter(lib_com == input$ville) |> 
+    pull(insee_com)})
 
 renderText({paste(input$ville, " est une ville de la région ", nom_region(), " et appartient au département : ", nom_departement() ," (" , code_departement(), ")", sep ="")})
 ```
@@ -224,15 +238,15 @@ Population
 
 ```{r}
 nbr_habitant_filtre <- reactive({
-    nbr_habitant_filtre <- nbr_habitants |> filter(`libelle français` == input$ville)
+    nbr_habitant_filtre <- nbr_habitants |> filter(code == code_com())
     nbr_habitant_filtre$TIME_PERIOD <- factor(nbr_habitant_filtre$TIME_PERIOD, levels = sort(unique(nbr_habitant_filtre$TIME_PERIOD)))
     
     return(nbr_habitant_filtre)
     })
 
-educ_filtre <- reactive({educ |> filter(`libelle français` == input$ville)})
+educ_filtre <- reactive({educ |> filter(code == code_com())})
 
-actif_filtre <- reactive({actifs |> filter(`libelle français` == input$ville)})
+actif_filtre <- reactive({actifs |> filter(code == code_com())})
 ```
 
 Row Gauge
@@ -400,7 +414,7 @@ renderPlotly({
 ### Effectif des familles selon le nombre d'enfants après le recensement de `r renderText({max(famille_filtre()$TIME_PERIOD)})`
 
 ```{r}
-famille_filtre <- reactive({famille |> filter(`libelle français` == input$ville)})
+famille_filtre <- reactive({famille |> filter(code == code_com())})
 ```
 
 ```{r}
@@ -429,6 +443,232 @@ renderPlotly({
 Energie
 ===
 
+```{r}
+conso_elec_filtre <- reactive({conso_elec |> filter(`Code Commune` == code_com())})
+```
 
+
+Row valuebox
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+renderValueBox({
+  valueBox(
+    value = first(conso_elec_filtre()$OPERATEUR), 
+    caption = paste("Opérateur de la ville de : ", input$ville), 
+    color = "#dd3f2f", 
+    icon = "fa-solid fa-plug-circle-bolt")})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({
+  valueBox(
+    value = paste0(
+    round(sum(conso_elec_filtre() |> filter(Année == 2023) |> pull(`Conso totale (MWh)`)), 0), 
+    " MWh"
+  ),
+  caption = "Consommation Totale en 2023",
+  color = "#e46559", 
+  icon = "fa-solid fa-bolt")})
+```
+
+### Chart B
+
+```{r}
+renderValueBox({
+  conso_2023 <- sum(conso_elec_filtre() |> filter(Année == 2023) |> pull(`Conso totale (MWh)`))
+  conso_2022 <- sum(conso_elec_filtre() |> filter(Année == 2022) |> pull(`Conso totale (MWh)`))
+variation <- round(((conso_2023 - conso_2022) / conso_2022) * 100, 1)
+valueBox(
+  value = paste0(ifelse(variation >= 0, "+", ""), variation, "%"),
+  caption = "Évolution par rapport à 2022",
+  color = ifelse(variation >= 0, "danger", "success"), 
+  icon = "fa-solid fa-chart-line"
+)})
+```
+
+Row 
+----------------------------------------------------------------------
+
+
+### Consommation totale d'Electricité au fil du temps par grand secteur
+
+```{r}
+renderPlotly({
+  p <- conso_elec_filtre() |> 
+    ggplot(aes(
+      x = factor(Année), 
+      y = `Conso totale (MWh)`, 
+      fill = `CODE GRAND SECTEUR`,
+      text = paste0(
+        "Année: ", Année, "<br>",
+        "Secteur: ", `CODE GRAND SECTEUR`, "<br>",
+        "Consommation: ", `Conso totale (MWh)`, " MWh"
+      )
+    )) +
+    geom_bar(stat = "identity", position = "stack") +
+    labs(
+      x = "Année",
+      y = "Consommation Totale (MWh)",
+      fill = "Secteur"
+    ) +
+    scale_fill_manual(values = c(
+      "TERTIAIRE" = "#dd3f2f", 
+      "AGRICULTURE" = "#dcd0d0", 
+      "INDUSTRIE" = "#775a59", 
+      "RESIDENTIEL" = "#8a0707", 
+      "INCONNU" = "#000000"
+    )) +
+    theme_minimal()+
+    theme(
+      text = element_text(family = "roboto"),
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11),
+      legend.position = "none")
+
+  ggplotly(p, tooltip = "text") |> 
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10))
+    )
+})
+```
+
+### Nombre de site consommateur d'Electricité par grand secteur
+
+```{r}
+renderPlotly({
+  p <- conso_elec_filtre() |>  
+    filter(Année %in% c(2021,2022,2023)) |> 
+    ggplot(aes(
+      x = reorder(`CODE GRAND SECTEUR`, `Nb sites`),
+      y = `Nb sites`,
+      fill = factor(Année, levels = c("2023", "2022", "2021")),
+      text = paste0(
+        "Secteur: ", `CODE GRAND SECTEUR`, "<br>",
+        "Nombre de sites : ", `Nb sites`, "<br>",
+        "Année: ", Année
+      ) # <- Ajout de `text` dans aes()
+    )) +
+    geom_bar(stat = "identity", position = "dodge", color = "black", width = 0.7) +
+    coord_flip() +
+    xlab("") +
+    ylab("Nombre de sites") +
+    scale_fill_manual(
+      values = c(
+        "2021" = "#dd3f2f",
+        "2023" = "#dcd0d0",
+        "2022" = "#775a59"
+      )
+    ) +
+    theme_minimal() +
+    theme(
+      text = element_text(family = "roboto"),
+      axis.title.x = element_text(size = 11),
+      axis.title.y = element_text(size = 11),
+      legend.position = "none" # Supprime la légende
+    ) +
+    labs(fill = "Année")
+
+  ggplotly(p, tooltip = "text") |> 
+    layout(
+      margin = list(t = 10, b = 40, l = 40, r = 20),
+      yaxis = list(tickfont = list(size = 10)),
+      xaxis = list(tickfont = list(size = 10))
+    )
+})
+
+```
+
+Row 
+----------------------------------------------------------------------
+
+### Répartition de la consommationn d'Electricité par Grand Secteur en 2017
+
+```{r}
+renderPlot({
+  data <- conso_elec_filtre() |> 
+    filter(Année == 2017) |> 
+    mutate(percentage = `Conso totale (MWh)` / sum(`Conso totale (MWh)`) * 100)
+
+  labels_secteurs <- setNames(
+    paste0(unique(data$`CODE GRAND SECTEUR`), " (", 
+           round(data$percentage, 1), "%)"), 
+    unique(data$`CODE GRAND SECTEUR`)
+  )
+
+  ggplot(data, aes(
+    x = "", 
+    y = `Conso totale (MWh)`, 
+    fill = `CODE GRAND SECTEUR`
+  )) +
+    geom_bar(width = 1, stat = "identity", color = "white") +
+    coord_polar("y", start = 0) +
+    labs(fill = "Secteur") +
+    theme_void() +
+    scale_fill_manual(
+      values = c(
+        "TERTIAIRE" = "#dd3f2f", 
+        "AGRICULTURE" = "#dcd0d0",
+        "INDUSTRIE" = "#775a59", 
+        "RESIDENTIEL" = "#8a0707",
+        "INCONNU" = "#f7f6f7"
+      ),
+      labels = labels_secteurs  # Ajout des % dans la légende
+    ) +
+    theme(
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 16, face = "bold")
+    )
+})
+
+```
+
+### Répartition de la consommation d'Electricité par Grand Secteur en 2023
+
+```{r}
+renderPlot({
+  data <- conso_elec_filtre() |> 
+    filter(Année == 2023) |> 
+    mutate(percentage = `Conso totale (MWh)` / sum(`Conso totale (MWh)`) * 100)  # Calcul des %
+
+  # Création d'un vecteur de labels avec les noms des secteurs et leurs %
+  labels_secteurs <- setNames(
+    paste0(unique(data$`CODE GRAND SECTEUR`), " (", 
+           round(data$percentage, 1), "%)"), 
+    unique(data$`CODE GRAND SECTEUR`)
+  )
+
+  ggplot(data, aes(
+    x = "", 
+    y = `Conso totale (MWh)`, 
+    fill = `CODE GRAND SECTEUR`
+  )) +
+    geom_bar(width = 1, stat = "identity", color = "white") +
+    coord_polar("y", start = 0) +
+    labs(fill = "Secteur") +
+    theme_void() +
+    scale_fill_manual(
+      values = c(
+        "TERTIAIRE" = "#dd3f2f", 
+        "AGRICULTURE" = "#dcd0d0",
+        "INDUSTRIE" = "#775a59", 
+        "RESIDENTIEL" = "#8a0707",
+        "INCONNU" = "#f7f6f7"
+      ),
+      labels = labels_secteurs  # Ajout des % dans la légende
+    ) +
+    theme(
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 16, face = "bold")
+    )
+})
+
+```
 
 
