@@ -38,52 +38,52 @@ library(sysfonts)
 
 ```{r import, cache=TRUE, message=FALSE, warning=FALSE}
 #drive_auth()
-#drive_download(drive_get("https://drive.google.com/file/d/1s0xWzhsXDBvtIndDDzb23PCkH_SeICLk/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1s0xWzhsXDBvtIndDDzb23PCkH_SeICLk/view?usp=drive_link"), overwrite = TRUE)
 base_naissance <- read_parquet("giga_db_naissance.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1NHYj96nexxfPmbtJVdJ1RmJ2BmQ6YciQ/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1NHYj96nexxfPmbtJVdJ1RmJ2BmQ6YciQ/view?usp=drive_link"), overwrite = TRUE)
 base_deces <- read_parquet("giga_db_deces.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1rJYH0qEnKjfR3qapAc-ODI6xp3z9nj7Z/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1rJYH0qEnKjfR3qapAc-ODI6xp3z9nj7Z/view?usp=drive_link"), overwrite = TRUE)
 liste_ville <- read_parquet("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1ystZjTrismV_EeMyJVv43Bf_95bDBTJ1/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1ystZjTrismV_EeMyJVv43Bf_95bDBTJ1/view?usp=drive_link"), overwrite = TRUE)
 nbr_habitants <- read_parquet("nbr_habitants_par_recensement.parquet")
 
 
-#drive_download(drive_get("https://drive.google.com/file/d/1bFz2nmnhE-bWeCNrESUJ_0eohLAe4lnz/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1bFz2nmnhE-bWeCNrESUJ_0eohLAe4lnz/view?usp=drive_link"), overwrite = TRUE)
 actifs <- read_parquet("recensement_2021_actif.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1tV3UwpObj68esUUGrokhxX9KWuIRCrwk/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1tV3UwpObj68esUUGrokhxX9KWuIRCrwk/view?usp=drive_link"), overwrite = TRUE)
 famille <- read_parquet("recensement_2021_famille.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
 educ <- read_parquet("recensement_2021_educ.parquet")
 educ$code <- sub("^COM-", "", educ$code)
 
-#drive_download(drive_get("https://drive.google.com/file/d/1ndWTCaUwTq9lfEViT4POPld6D2sny3s9/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1ndWTCaUwTq9lfEViT4POPld6D2sny3s9/view?usp=drive_link"), overwrite = TRUE)
 conso_elec <- read_parquet("conso_final_elec.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
 educ <- read_parquet("recensement_2021_educ.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1YJu0YRZpKVMR6XbHvKRl_OB5ON4TD0J9/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1YJu0YRZpKVMR6XbHvKRl_OB5ON4TD0J9/view?usp=drive_link"), overwrite = TRUE)
 df_sante <- read_parquet("BDD_simplified.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1-lOeFVqS6uQhZI6igwXei1gW896KLLzd/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1-lOeFVqS6uQhZI6igwXei1gW896KLLzd/view?usp=drive_link"), overwrite = TRUE)
 df_sante_full <- read_parquet("BDD_full_simplified.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1KBrdGO8PJCPupcbKSQz1VvZ5vsxMk_La/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1KBrdGO8PJCPupcbKSQz1VvZ5vsxMk_La/view?usp=drive_link"), overwrite = TRUE)
 df_culture <- read_parquet("BDD_culture_simplified.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/129ZVqyyl4TCb3Nc2nL_i5qnEeihbIOj5/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/129ZVqyyl4TCb3Nc2nL_i5qnEeihbIOj5/view?usp=drive_link"), overwrite = TRUE)
 df_culture_full <- read_parquet("BDD_culture_full_simplified.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1gBfEVzdDmnAUofxH_H8wK8Q7trWpGkIs/view?usp=drive_link"), overwrite = TRUE)
+drive_download(drive_get("https://drive.google.com/file/d/1gBfEVzdDmnAUofxH_H8wK8Q7trWpGkIs/view?usp=drive_link"), overwrite = TRUE)
 commerces <- read_parquet("commerces.parquet")
 
-#drive_download(drive_get("https://drive.google.com/file/d/1F8zAuEu7_xziT2vevGzHNrYnYr1h9y_l/view?usp=drive_link"), overwrite = TRUE)
-pop <- read_parquet("population.parquet")
+drive_download(drive_get("https://drive.google.com/file/d/1F8zAuEu7_xziT2vevGzHNrYnYr1h9y_l/view?usp=drive_link"), overwrite = TRUE)
+pop <- read_parquet("pop.parquet")
 font_add_google("Roboto", "roboto")
 ```
 
@@ -101,7 +101,7 @@ Sidebar {.sidebar}
 #Permet à l'utilisateur de sélectionner une ville parmis la liste des villes du programme
 selectInput("ville", label = "Selectionnez une ville du programme :",
               choices = unique(liste_ville$lib_com),
-              selected = "Sancerre")
+              selected = "sancerre")
 
 #permet d'extraire le numéros du département associé à la ville selectionné
 code_departement <- reactive({liste_ville |> 
@@ -1051,7 +1051,7 @@ Row valuebox
 ```{r}
 renderValueBox({
     total <- commerces %>% filter(com_nom == input$ville) %>% nrow()
-    valueBox(total, "Commerces", icon = icon("store"), color = "#e46559")
+    valueBox(total, "Commerces", color = "#dd3f2f", icon = "fa-solid fa-store")
   })
 ```
 
@@ -1065,7 +1065,7 @@ renderValueBox({
     
     commerce_habitant <- ifelse(pop_ville > 0, round((total_commerces / pop_ville) * 1000, 2), NA)
     
-    valueBox(commerce_habitant, "Commerces pour 1000 habitants", icon = icon("users"), color = "#e46559")
+    valueBox(commerce_habitant, "Commerces pour 1000 habitants", color = "#e46559", icon = "fa-solid fa-street-view")
 })
 ```
 
@@ -1075,7 +1075,7 @@ renderValueBox({
 ```{r}
 renderValueBox({
     total_type <- commerces %>% filter(com_nom == input$ville, type == input$type_com) %>% nrow()
-    valueBox(total_type, paste(input$type_com), icon = icon("tags"), color = "#e46559")
+    valueBox(total_type, paste(input$type_com), color = "#eb8c82", icon = "fa-solid fa-house-user")
 })
 ```
 
