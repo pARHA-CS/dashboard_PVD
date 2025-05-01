@@ -1,20 +1,22 @@
 ---
 title: "Dashboard"
-output: 
+output:
   flexdashboard::flex_dashboard:
     orientation: rows
     theme:
       version: 4
       bootswatch: journal
-      bg: "#FFFFFF"
-      fg: "#101010"
-      primary: "#DD3F2F"
-      navbar-bg: "#DD3F2F"
-      base_font: 
+      bg: '#FFFFFF'
+      fg: '#101010'
+      primary: '#DD3F2F'
+      navbar-bg: '#DD3F2F'
+      base_font:
         google: Roboto
       heading_font:
         google: Roboto
 runtime: shiny
+resource_files:
+- style.css
 ---
 
 ```{r setup, include=FALSE, context = "server"}
@@ -30,6 +32,7 @@ library(readr)
 library(googledrive)
 library(tidyverse)
 library(shinyBS)
+library(shinybusy)
 
 library(showtext)
 library(sysfonts)
@@ -37,60 +40,32 @@ library(sysfonts)
 
 
 ```{r import, cache=TRUE, message=FALSE, warning=FALSE}
-#drive_auth()
-drive_download(drive_get("https://drive.google.com/file/d/1s0xWzhsXDBvtIndDDzb23PCkH_SeICLk/view?usp=drive_link"), overwrite = TRUE)
-base_naissance <- read_parquet("giga_db_naissance.parquet")
+safe_read <- function(file) {
+  tryCatch({
+    message(paste("Lecture de", file))
+    df <- read_parquet(file)
+    message(paste("OK:", file))
+    df
+  }, error = function(e) {
+    message(paste("ERREUR dans", file, ":", e$message))
+    NULL
+  })
+}
 
-drive_download(drive_get("https://drive.google.com/file/d/1NHYj96nexxfPmbtJVdJ1RmJ2BmQ6YciQ/view?usp=drive_link"), overwrite = TRUE)
-base_deces <- read_parquet("giga_db_deces.parquet")
+base_naissance <- safe_read("giga_db_naissance.parquet")
+base_deces <- safe_read("giga_db_deces.parquet")
+liste_ville <- safe_read("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/1rJYH0qEnKjfR3qapAc-ODI6xp3z9nj7Z/view?usp=drive_link"), overwrite = TRUE)
-liste_ville <- read_parquet("programme-petites-villes-de-demain-liste-des-villes-beneficiaires.parquet")
+nbr_habitants <- safe_read("nbr_habitant_recensement_light.parquet")
+actifs <- safe_read("actif_light.parquet")
+famille <- safe_read("famille_light.parquet")
+educ <- safe_read("education_light.parquet")
 
-drive_download(drive_get("https://drive.google.com/file/d/1ystZjTrismV_EeMyJVv43Bf_95bDBTJ1/view?usp=drive_link"), overwrite = TRUE)
-nbr_habitants <- read_parquet("nbr_habitants_par_recensement.parquet")
-
-
-drive_download(drive_get("https://drive.google.com/file/d/1bFz2nmnhE-bWeCNrESUJ_0eohLAe4lnz/view?usp=drive_link"), overwrite = TRUE)
-actifs <- read_parquet("recensement_2021_actif.parquet")
-
-drive_download(drive_get("https://drive.google.com/file/d/1tV3UwpObj68esUUGrokhxX9KWuIRCrwk/view?usp=drive_link"), overwrite = TRUE)
-famille <- read_parquet("recensement_2021_famille.parquet")
-
-drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
-educ <- read_parquet("recensement_2021_educ.parquet")
-educ$code <- sub("^COM-", "", educ$code)
-
-drive_download(drive_get("https://drive.google.com/file/d/1ndWTCaUwTq9lfEViT4POPld6D2sny3s9/view?usp=drive_link"), overwrite = TRUE)
-conso_elec <- read_parquet("conso_final_elec.parquet")
-
-drive_download(drive_get("https://drive.google.com/file/d/1sByh_oeSjKgjHcCklv-qH48Ts84YVO0E/view?usp=drive_link"), overwrite = TRUE)
-educ <- read_parquet("recensement_2021_educ.parquet")
-
-drive_download(drive_get("https://drive.google.com/file/d/1YJu0YRZpKVMR6XbHvKRl_OB5ON4TD0J9/view?usp=drive_link"), overwrite = TRUE)
-df_sante <- read_parquet("BDD_simplified.parquet")
-
-drive_download(drive_get("https://drive.google.com/file/d/1-lOeFVqS6uQhZI6igwXei1gW896KLLzd/view?usp=drive_link"), overwrite = TRUE)
-df_sante_full <- read_parquet("BDD_full_simplified.parquet")
-
-drive_download(drive_get("https://drive.google.com/file/d/1KBrdGO8PJCPupcbKSQz1VvZ5vsxMk_La/view?usp=drive_link"), overwrite = TRUE)
-df_culture <- read_parquet("BDD_culture_simplified.parquet")
-
-drive_download(drive_get("https://drive.google.com/file/d/129ZVqyyl4TCb3Nc2nL_i5qnEeihbIOj5/view?usp=drive_link"), overwrite = TRUE)
-df_culture_full <- read_parquet("BDD_culture_full_simplified.parquet")
-
-drive_download(drive_get("https://drive.google.com/file/d/1gBfEVzdDmnAUofxH_H8wK8Q7trWpGkIs/view?usp=drive_link"), overwrite = TRUE)
-commerces <- read_parquet("commerces.parquet")
-
-drive_download(drive_get("https://drive.google.com/file/d/1F8zAuEu7_xziT2vevGzHNrYnYr1h9y_l/view?usp=drive_link"), overwrite = TRUE)
-pop <- read_parquet("pop.parquet")
-font_add_google("Roboto", "roboto")
-```
-
-```{r}
-pop$Commune <- pop$Commune |> tolower()
-
-write_parquet(pop, "population.parquet")
+conso_elec <- safe_read("electricite_light.parquet")
+df_sante_full <- safe_read("BDD_full_simplified.parquet")
+df_culture_full <- safe_read("BDD_culture_full_simplified.parquet")
+commerces <- safe_read("commerces_ligth.parquet")
+pop <- safe_read("population.parquet")
 ```
 
 
@@ -700,7 +675,7 @@ Santé
 ===
 
 ```{r}
-selectInput("typequ", "Choisissez un type d'équipement :", choices = unique(df_sante$TYPEQU))
+selectInput("typequ", "Choisissez un type d'équipement :", choices = unique(df_sante_full$TYPEQU))
 ```
 
 
@@ -712,7 +687,7 @@ Row valuebox
 ```{r}
 renderValueBox({
   ville_cible <- input$ville
-  nb_equipements <- df_sante |>  filter(LIBCOM == ville_cible, DOM == "D") |>  nrow()
+  nb_equipements <- df_sante_full |>  filter(LIBCOM == ville_cible, DOM == "D") |>  nrow()
 
   valueBox(
     nb_equipements,
@@ -727,8 +702,9 @@ renderValueBox({
 
 ```{r}
 renderValueBox({
-  moyenne_petites_villes <- df_sante |> 
-    filter(DOM == "D") |> 
+  moyenne_petites_villes <- df_sante_full |> 
+    filter(DOM == "D",
+           LIBCOM %in% liste_ville$lib_com) |>
     group_by(LIBCOM) |> 
     summarise(count = n()) |> 
     summarise(moyenne = mean(count))
@@ -774,7 +750,7 @@ renderPlotly({
   ville_cible <- input$ville
   typequ_cible <- input$typequ
 
-  df_sante_ville <- df_sante |> 
+  df_sante_ville <- df_sante_full |> 
     filter(LIBCOM == ville_cible, DOM == "D") |> 
     count(TYPEQU)
 
@@ -803,10 +779,10 @@ renderLeaflet({
   ville_cible <- input$ville
   typequ_cible <- input$typequ
 
-  df_sante_ville <- df_sante |> 
+  df_sante_ville <- df_sante_full |> 
     filter(LIBCOM == ville_cible, DOM == "D", TYPEQU == typequ_cible)
 
-  ville_coords <- df_sante |> 
+  ville_coords <- df_sante_full |> 
     filter(LIBCOM == ville_cible) |> 
     select(LATITUDE, LONGITUDE, TYPEQU) |> 
     distinct()
@@ -855,7 +831,7 @@ renderLeaflet({
                        "Type d'équipement:", TYPEQU, "<br/>")
       ) |> 
       addCircleMarkers(
-        data = df_sante |>  filter(LIBCOM == ville_cible, DOM == "D", TYPEQU != typequ_cible),
+        data = df_sante_full |>  filter(LIBCOM == ville_cible, DOM == "D", TYPEQU != typequ_cible),
         ~LONGITUDE, ~LATITUDE,
         radius = 6,
         color = "blue",
@@ -873,7 +849,7 @@ Culture
 ===
 
 ```{r}
-selectInput("type_lieu_culture", "Choisissez un type de bâtiment :", choices = unique(df_culture$`Type équipement ou lieu`))
+selectInput("type_lieu_culture", "Choisissez un type de bâtiment :", choices = unique(df_culture_full$`Type équipement ou lieu`))
 ```
 
 
@@ -885,7 +861,7 @@ Row valuebox
 ```{r}
 renderValueBox({
   ville_cible <- input$ville
-  nb_equipements <- df_culture |>  filter(LIBCOM == ville_cible) |>  nrow()
+  nb_equipements <- df_culture_full |>  filter(LIBCOM == ville_cible) |>  nrow()
 
   valueBox(
     nb_equipements,
@@ -900,9 +876,10 @@ renderValueBox({
 
 ```{r}
 renderValueBox({
-  moyenne_petites_villes <- df_culture |> 
-    group_by(LIBCOM) |> 
-    summarise(count = n()) |> 
+  moyenne_petites_villes <- df_culture_full |>
+    filter(LIBCOM %in% liste_ville$lib_com) |> 
+    group_by(LIBCOM) |>
+    summarise(count = n()) |>
     summarise(moyenne = mean(count))
 
   valueBox(
@@ -944,7 +921,7 @@ Row graph et carte
 renderPlotly({
   ville_cible <- input$ville
   
-  df_culture_ville <- df_culture |> 
+  df_culture_ville <- df_culture_full |> 
     filter(LIBCOM == ville_cible) |> 
     count(`Type équipement ou lieu`)
 
@@ -970,10 +947,10 @@ renderLeaflet({
   ville_cible <- input$ville
   type_lieu_culture_cible <- input$type_lieu_culture
 
-  df_culture_ville <- df_culture |> 
+  df_culture_ville <- df_culture_full |> 
     filter(LIBCOM == ville_cible, `Type équipement ou lieu` == type_lieu_culture_cible)
 
-  ville_coords <- df_culture |> 
+  ville_coords <- df_culture_full |> 
     filter(LIBCOM == ville_cible) |> 
     select(Latitude_equipement, Longitude_equipement, `Type équipement ou lieu`) |> 
     distinct()
@@ -1022,7 +999,7 @@ renderLeaflet({
                        "Type d'équipement:", `Type équipement ou lieu`, "<br/>")
       ) |> 
       addCircleMarkers(
-        data = df_culture |>  filter(LIBCOM == ville_cible, `Type équipement ou lieu` != type_lieu_culture_cible),
+        data = df_culture_full |>  filter(LIBCOM == ville_cible, `Type équipement ou lieu` != type_lieu_culture_cible),
         ~Longitude_equipement, ~Latitude_equipement,
         radius = 6,
         color = "blue",
